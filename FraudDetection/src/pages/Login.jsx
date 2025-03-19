@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { assets } from '../assets/assets'; 
+import { UserContext } from '../context/UserContext';
+import axios from 'axios';
 
 const Login = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const queryParams = new URLSearchParams(location.search);
-  const bank = queryParams.get('bank') || 'default';
-
-  // Dummy user credentials (Replace with real authentication)
-  const users = {
-    "user1@example.com": "Password123",
-    "admin@bank.com": "Admin@123",
-    "test@bank.com": "Test@456"
-  };
+  const bank =localStorage.getItem('bank') || "default";
+  bank.toUpperCase()
 
   // Bank logos mapping
   const bankLogos = {
@@ -28,6 +22,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [captcha, setCaptcha] = useState('');
   const [generatedCaptcha, setGeneratedCaptcha] = useState('');
+  const {setUToken, backendUrl} = useContext(UserContext);
 
   const canvasRef = useRef(null);
 
@@ -73,30 +68,32 @@ const Login = () => {
     generateCaptcha();
   }, []);
 
-  // Handle Login
-  const handleLogin = (e) => {
-    e.preventDefault();
 
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-    const trimmedCaptcha = captcha.trim();
+  const onSubmit = async (event) =>{
+    event.preventDefault()
 
-    // Check if email exists and password matches
-    if (!users[trimmedEmail] || users[trimmedEmail] !== trimmedPassword) {
-      toast.error('Invalid email or password.');
-      return;
+    try{
+
+        // CAPTCHA validation
+        if (!captcha.trim() || captcha.trim().toLowerCase() !== generatedCaptcha.toLowerCase()) {
+          toast.error('CAPTCHA is incorrect.');
+          return;
+        }
+
+        const {data} = await axios.post(backendUrl + `/users/login?bank=${bank}`, {email,password},{withCredentials:true})
+        if(data.status){
+            navigate("/verification");
+            localStorage.setItem('uToken',data.utoken)
+            localStorage.setItem('user', JSON.stringify(data.user));
+            setUToken(data.utoken)
+        }else{
+            toast.error(data.message)
+        }
+
+    }catch(error){
+      toast.error(error.message);
     }
-
-    // CAPTCHA validation
-    if (!trimmedCaptcha || trimmedCaptcha.toLowerCase() !== generatedCaptcha.toLowerCase()) {
-      toast.error('CAPTCHA is incorrect.');
-      return;
-    }
-
-    // Successful login
-    toast.success(`Login successful for ${bank.toUpperCase()}!`);
-    navigate(`/verification?bank=${bank}&email=${trimmedEmail}`);
-  };
+}
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -116,7 +113,7 @@ const Login = () => {
         </h2>
 
         {/* Login Form */}
-        <form onSubmit={handleLogin}>
+        <form onSubmit={onSubmit}>
           {/* Email Field */}
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold">Email</label>

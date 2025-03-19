@@ -1,14 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { assets } from '../assets/assets'; // Ensure assets are correctly imported
+import { assets } from '../assets/assets';
 
 const Home = () => {
   const navigate = useNavigate();
 
   // Handle bank selection and navigate to login
   const handleBankClick = (bankName) => {
-    console.log(`Bank clicked: ${bankName}`); // Debugging click event
-    navigate(`/login?bank=${bankName}`);
+    localStorage.setItem('bank',bankName)
+    navigate("/login");
   };
 
   return (
