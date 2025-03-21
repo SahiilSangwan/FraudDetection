@@ -1,37 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { UserContext } from "../context/UserContext";
 
 const BeneficiaryManager = () => {
     const [bankType, setBankType] = useState("same");
-    const [beneficiaries, setBeneficiaries] = useState([
-        { id: 1, name: "John Doe", account: "123456789", ifsc: "FAME0001234", amount: 5000, bank: "same" },
-        { id: 2, name: "Jane Smith", account: "987654321", ifsc: "DIFF0005678", amount: 7000, bank: "different" },
-        { id: 3, name: "Alice", account: "456789123", ifsc: "FAME0001234", amount: 3000, bank: "same" },
-        { id: 4, name: "Bob", account: "789123456", ifsc: "DIFF0005678", amount: 9000, bank: "different" },
-        { id: 5, name: "Charlie", account: "654321987", ifsc: "FAME0001234", amount: 2000, bank: "same" },
-        { id: 6, name: "David", account: "321987654", ifsc: "DIFF0005678", amount: 6000, bank: "different" },
-        { id: 7, name: "Eve", account: "987123654", ifsc: "FAME0001234", amount: 4000, bank: "same" },
-        { id: 8, name: "Frank", account: "654987321", ifsc: "DIFF0005678", amount: 8000, bank: "different" },
-        { id: 9, name: "Grace", account: "123789456", ifsc: "FAME0001234", amount: 1000, bank: "same" },
-        { id: 10, name: "Harry", account: "987456321", ifsc: "DIFF0005678", amount: 2000, bank: "different" },
-    ]);
+
+    const {beneficiaries, getUserBeneficiaries, deleteBeneficiaries,handleUpdateBeneficiary, sendOTP,
+        verifyOTP, setNewBeneficiary, newBeneficiary } = useContext(UserContext);
+
 
     // Popup states
-    const [showEditPopup, setShowEditPopup] = useState(false);
     const [showAddPopup, setShowAddPopup] = useState(false);
-    const [selectedBeneficiary, setSelectedBeneficiary] = useState(null);
-    const [updatedAmount, setUpdatedAmount] = useState("");
+    const [selectedBeneficiary, setSelectedBeneficiary] = useState(0);
+    
     const [otp, setOtp] = useState("");
     const [otpSent, setOtpSent] = useState(false);
     const [resendTimer, setResendTimer] = useState(30);
 
-    // New Beneficiary Form State
-    const [newBeneficiary, setNewBeneficiary] = useState({
-        name: "",
-        account: "",
-        confirmAccount: "",
-        ifsc: "",
-        amount: ""
-    });
+    const [isUpdateOpen, setIsUpdateOpen] = useState(false);
+    const [amount, setAmount] = useState("");
+
+
 
     // Timer for OTP Resend
     useEffect(() => {
@@ -45,14 +33,11 @@ const BeneficiaryManager = () => {
     // Handle checkbox toggle
     const handleBankChange = (type) => setBankType(type);
 
-    // Filter Beneficiaries
-    const filteredBeneficiaries = beneficiaries.filter(b => b.bank === bankType);
 
     // Open Edit Popup
     const handleEdit = (beneficiary) => {
+        setIsUpdateOpen(true);
         setSelectedBeneficiary(beneficiary);
-        setUpdatedAmount(beneficiary.amount);
-        setShowEditPopup(true);
     };
 
     // Open Add Beneficiary Popup
@@ -60,66 +45,26 @@ const BeneficiaryManager = () => {
         setShowAddPopup(true);
     };
 
-    // Handle Amount Change
-    const handleAmountChange = (e) => setUpdatedAmount(e.target.value);
 
     // Send OTP
-    const handleSendOtp = () => {
-        setOtpSent(true);
-        setResendTimer(30);
+    const handleSendOtp = async () => {
+        const success = await sendOTP(); 
+    
+        if (success) {
+            setOtpSent(true);
+            setResendTimer(30);
+        }
     };
 
     // Resend OTP
     const handleResendOtp = () => {
         setOtp("");
-        setResendTimer(30);
+        handleSendOtp();
     };
 
-    // Confirm OTP for Updating Beneficiary
-    const handleConfirmOtp = () => {
-        if (otp === "1234") {
-            setBeneficiaries(prev =>
-                prev.map(b => (b.id === selectedBeneficiary.id ? { ...b, amount: updatedAmount } : b))
-            );
-            alert("Amount Updated Successfully!");
-            setShowEditPopup(false);
-            setOtp("");
-            setOtpSent(false);
-        } else {
-            alert("Invalid OTP. Try Again.");
-        }
-    };
-
-    // Confirm OTP for Adding New Beneficiary
-    const handleConfirmAddOtp = () => {
-        if (otp === "1234") {
-            if (newBeneficiary.account !== newBeneficiary.confirmAccount) {
-                alert("Account numbers do not match!");
-                return;
-            }
-            const newEntry = {
-                id: beneficiaries.length + 1,
-                name: newBeneficiary.name,
-                account: newBeneficiary.account,
-                ifsc: newBeneficiary.ifsc,
-                amount: newBeneficiary.amount,
-                bank: bankType
-            };
-            setBeneficiaries([...beneficiaries, newEntry]);
-            alert("Beneficiary Added Successfully!");
-            setShowAddPopup(false);
-            setNewBeneficiary({ name: "", account: "", confirmAccount: "", ifsc: "", amount: "" });
-            setOtp("");
-            setOtpSent(false);
-        } else {
-            alert("Invalid OTP. Try Again.");
-        }
-    };
-
-    // Handle Delete Beneficiary
-    const handleDelete = (id) => {
-        setBeneficiaries(prev => prev.filter(b => b.id !== id));
-    };
+    useEffect(()=>{
+        getUserBeneficiaries(bankType === "same" ? true : false);
+    },[bankType])
 
     return (
         <div className="max-w-full mx-auto p-6 bg-gray-100 min-h-screen">
@@ -154,20 +99,52 @@ const BeneficiaryManager = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredBeneficiaries.map((b) => (
-                        <tr key={b.id} className="border-b">
-                            <td className="py-2 text-center">{b.name}</td>
-                            <td className="py-2 text-center">{b.account}</td>
-                            <td className="py-2 text-center">{b.ifsc}</td>
+                    {beneficiaries.map((b,index) => (
+                        <tr key={index} className="border-b">
+                            <td className="py-2 text-center">{b.beneficiaryName}</td>
+                            <td className="py-2 text-center">{b.beneficiaryAccountNumber}</td>
+                            <td className="py-2 text-center">{b.beneficiaryBank}</td>
                             <td className="py-2 text-center">₹{b.amount}</td>
                             <td className="py-2 flex justify-center gap-2">
-                                <button onClick={() => handleEdit(b)} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Update</button>
-                                <button onClick={() => handleDelete(b.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
+                                <button onClick={() => handleEdit(b.beneficiaryId)} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Update</button>
+                                <button onClick={() => deleteBeneficiaries(b.beneficiaryId)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete</button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
+            {/* Edit Beneficiary Popup */}
+            {isUpdateOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                        <h2 className="text-xl font-bold mb-4">Enter Amount</h2>
+                        <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter amount"
+                        />
+                        <div className="flex justify-end mt-4">
+                            <button
+                                onClick={() => setIsUpdateOpen(false)}
+                                className="px-4 py-2 bg-gray-400 text-white rounded-lg mr-2 hover:bg-gray-500"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => { handleUpdateBeneficiary(selectedBeneficiary, amount); setIsUpdateOpen(false);}}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            >
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
 
             {/* Add Beneficiary Popup */}
             {showAddPopup && (
@@ -189,8 +166,8 @@ const BeneficiaryManager = () => {
                         {/* Account Number */}
                         <input 
                             type="text" 
-                            value={newBeneficiary.account} 
-                            onChange={(e) => setNewBeneficiary({ ...newBeneficiary, account: e.target.value })} 
+                            value={newBeneficiary.accountNumber} 
+                            onChange={(e) => setNewBeneficiary({ ...newBeneficiary, accountNumber: e.target.value })} 
                             placeholder="Account Number" 
                             className="w-full p-2 border rounded mb-2"
                         />
@@ -207,8 +184,8 @@ const BeneficiaryManager = () => {
                         {/* IFSC Code */}
                         <input 
                             type="text" 
-                            value={newBeneficiary.ifsc} 
-                            onChange={(e) => setNewBeneficiary({ ...newBeneficiary, ifsc: e.target.value })} 
+                            value={newBeneficiary.ifscCode} 
+                            onChange={(e) => setNewBeneficiary({ ...newBeneficiary, ifscCode: e.target.value })} 
                             placeholder="IFSC Code" 
                             className="w-full p-2 border rounded mb-2"
                         />
@@ -234,7 +211,7 @@ const BeneficiaryManager = () => {
                                     placeholder="Enter OTP" 
                                     className="w-full p-2 border rounded mt-2"
                                 />
-                                <button onClick={handleConfirmAddOtp} className="bg-green-500 text-white py-2 px-4 rounded w-full mt-2">Confirm OTP</button>
+                                <button onClick={() => verifyOTP(otp)} className="bg-green-500 text-white py-2 px-4 rounded w-full mt-2">Confirm OTP</button>
                                 
                                 {resendTimer === 0 ? (
                                     <button onClick={handleResendOtp} className="text-blue-500 mt-2">Resend OTP</button>

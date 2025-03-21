@@ -25,22 +25,33 @@ public class BeneficiaryOperations {
         this.userRepository = userRepository;
     }
 
-    public Beneficiary addBeneficiary(Integer userId, String userBank, String accountNumber, String ifscCode, BigDecimal amount) {
+    public Map<String,Object> addBeneficiary(Integer userId, String userBank, String accountNumber, String ifscCode, BigDecimal amount,String name) throws BeneficiaryException {
         // ✅ Check if beneficiary already exists
+        Map<String,Object> response = new HashMap<>();
         Optional<Beneficiary> existingBeneficiary = beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(userId, accountNumber);
         if (existingBeneficiary.isPresent()) {
-            throw new BeneficiaryException("Beneficiary with this account number already exists for the user.");
+            response.put("success", false);
+            response.put("message", "Beneficiary already exists");
+            response.put("data",null);
+            return response;
         }
 
         // ✅ Fetch beneficiary account details
         Optional<Account> accountOptional = accountRepository.findByAccountNumber(accountNumber);
         if (accountOptional.isEmpty()) {
-            throw new BeneficiaryException("Account not found with the given account number.");
+            response.put("success", false);
+            response.put("message", "Account does not exist");
+            response.put("data",null);
+            return response;
         }
 
         Account beneficiaryAccount = accountOptional.get();
         if (!beneficiaryAccount.getIfscCode().equals(ifscCode)) {
-            throw new BeneficiaryException("IFSC code does not match for the given account number.");
+            response.put("success", false);
+            response.put("message", "Account does not match ifsc code");
+            response.put("data",null);
+            return response;
+
         }
 
         Integer beneficiaryUserId = beneficiaryAccount.getUserId();
@@ -49,11 +60,21 @@ public class BeneficiaryOperations {
         // ✅ Fetch beneficiary user details
         Optional<User> userOptional = userRepository.findById(beneficiaryUserId);
         if (userOptional.isEmpty()) {
-            throw new BeneficiaryException("User not found for beneficiary userId: " + beneficiaryUserId);
+            response.put("success", false);
+            response.put("message", "User does not exist");
+            response.put("data",null);
+            return response;
+
         }
 
+        if(userOptional.get().getUserId()==userId && userBank.equals(beneficiaryBank)){
+            response.put("success", false);
+            response.put("message", "Can not add the same person as beneficiary  : " + beneficiaryUserId);
+            response.put("data",null);
+
+        }
         User beneficiaryUser = userOptional.get();
-        String beneficiaryName = beneficiaryUser.getFirstName() + " " + beneficiaryUser.getLastName();
+       // String beneficiaryName = beneficiaryUser.getFirstName() + " " + beneficiaryUser.getLastName();
 
         // ✅ Create new Beneficiary entry
         Beneficiary beneficiary = new Beneficiary();
@@ -61,10 +82,13 @@ public class BeneficiaryOperations {
         beneficiary.setBeneficiaryUserId(beneficiaryUserId);
         beneficiary.setBeneficiaryAccountNumber(accountNumber);
         beneficiary.setBeneficiaryBank(beneficiaryBank);
-        beneficiary.setBeneficiaryName(beneficiaryName);
+        beneficiary.setBeneficiaryName(name);
         beneficiary.setAmount(amount);
+        response.put("success", true);
+        response.put("data",beneficiary);
+        response.put("message", "Successfully added beneficiary");
 
-        return beneficiaryRepository.save(beneficiary);
+        return response;
     }
 
 
@@ -97,6 +121,7 @@ public class BeneficiaryOperations {
         }
 
         beneficiary.setAmount(newAmount);
+
         return beneficiaryRepository.save(beneficiary);
     }
 

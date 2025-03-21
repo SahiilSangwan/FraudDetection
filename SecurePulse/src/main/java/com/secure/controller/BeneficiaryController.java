@@ -62,12 +62,14 @@ public class BeneficiaryController {
         try {
             // ✅ Extract Token & Decode JWT
             String token = jwtService.extractAuthToken(request);
+
             if (token == null) {
                 response.put("success", false);
                 response.put("message", "Unauthorized: Token missing");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
+            System.out.println(token);
             DecodedJWT decodedJWT = jwtService.extractClaims(token);
             Integer userId = decodedJWT.getClaim("userId").asInt();
             String userBank = decodedJWT.getClaim("userBank").asString();
@@ -76,14 +78,10 @@ public class BeneficiaryController {
             String accountNumber = (String) requestBody.get("accountNumber");
             String ifscCode = (String) requestBody.get("ifscCode");
             BigDecimal amount = new BigDecimal(requestBody.get("amount").toString());
+            String name=(String) requestBody.get("name");
 
             // ✅ Add Beneficiary
-            Beneficiary savedBeneficiary = beneficiaryOperations.addBeneficiary(userId, userBank, accountNumber, ifscCode, amount);
-
-            response.put("success", true);
-            response.put("message", "Beneficiary added successfully.");
-            response.put("data", savedBeneficiary);
-
+            response = beneficiaryOperations.addBeneficiary(userId, userBank, accountNumber, ifscCode, amount,name);
             return ResponseEntity.ok(response);
 
         } catch (BeneficiaryException e) { // ✅ Handle custom errors
@@ -101,25 +99,33 @@ public class BeneficiaryController {
     // ✅ Delete Beneficiary
     @DeleteMapping("/delete/{beneficiaryId}")
     public ResponseEntity<?> deleteBeneficiary(@PathVariable Integer beneficiaryId, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
             String token = jwtService.extractAuthToken(request);
             if (token == null) {
                 return ResponseEntity.status(401).body("Unauthorized: Token missing");
             }
 
+
+
             DecodedJWT decodedJWT = jwtService.extractClaims(token);
+
             Integer userId = decodedJWT.getClaim("userId").asInt();
 
             beneficiaryOperations.deleteBeneficiary(userId, beneficiaryId);
-            return ResponseEntity.ok("Beneficiary deleted successfully");
+            response.put("success", true);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "An unexpected error occurred: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 
     // ✅ Update Beneficiary Amount
     @PutMapping("/update")
     public ResponseEntity<?> updateBeneficiaryAmount(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
             String token = jwtService.extractAuthToken(request);
             if (token == null) {
@@ -133,9 +139,14 @@ public class BeneficiaryController {
             BigDecimal newAmount = new BigDecimal(requestBody.get("amount").toString());
 
             Beneficiary updatedBeneficiary = beneficiaryOperations.updateBeneficiaryAmount(userId, beneficiaryId, newAmount);
-            return ResponseEntity.ok(updatedBeneficiary);
+            response.put("success", true);
+            response.put("message", "Beneficiary updated successfully.");
+            response.put("data", updatedBeneficiary);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            response.put("success", false);
+            response.put("message", "An unexpected error occurred: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 }

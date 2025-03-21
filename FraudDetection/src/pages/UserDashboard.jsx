@@ -17,6 +17,7 @@ const Dashboard = () => {
 
   
   const {account, getUserAccount} = useContext(UserContext);
+  
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const username = storedUser?.name || "";
 

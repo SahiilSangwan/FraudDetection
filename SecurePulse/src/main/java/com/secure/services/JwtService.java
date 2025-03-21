@@ -91,7 +91,7 @@ public class JwtService {
                 .withIssuedAt(new Date())
 
 
-                .withExpiresAt(new Date(System.currentTimeMillis() + 3600000)) // 1 Hour Expiry
+                .withExpiresAt(new Date(System.currentTimeMillis() + 3600000*2)) // 1 Hour Expiry
 
 
                 .sign(Algorithm.HMAC256(SECRET_KEY));
@@ -121,7 +121,7 @@ public class JwtService {
                 .withIssuedAt(new Date())
 
 
-                .withExpiresAt(new Date(System.currentTimeMillis() + 15 * 60 * 1000)) // 15 min expiry
+                .withExpiresAt(new Date(System.currentTimeMillis() + 3600000*2)) // 15 min expiry
 
 
                 .sign(Algorithm.HMAC256(SECRET_KEY));
@@ -144,7 +144,7 @@ public class JwtService {
 
             JWTVerifier verifier = JWT.require(Algorithm.HMAC256(SECRET_KEY)).build();
 
-
+            token=token.trim();
             return verifier.verify(token);
 
 
@@ -154,7 +154,7 @@ public class JwtService {
             System.out.println("❌ Token verification failed: " + e.getMessage());
 
 
-            return null; // Return null if token is invalid
+            return null;
 
 
         }
