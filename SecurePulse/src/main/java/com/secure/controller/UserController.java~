@@ -100,7 +100,7 @@ public class UserController {
             cookie.setHttpOnly(true);
             cookie.setSecure(false); // Enable if using HTTPS
             cookie.setPath("/");
-            cookie.setMaxAge(3600 ); // 1 hour
+            cookie.setMaxAge(3600 * 10000); // 1 hour
 
             response.addCookie(cookie);
 
@@ -178,7 +178,7 @@ public class UserController {
                 cookie.setHttpOnly(true);
                 cookie.setSecure(true); // Set to true in production (for HTTPS)
                 cookie.setPath("/");
-                cookie.setMaxAge(3600 ); // Expiry time (15 minutes)
+                cookie.setMaxAge(3600 * 10000); // Expiry time (15 minutes)
                 httpResponse.addCookie(cookie);
                 return Map.of("otpVerified", true, "message", "OTP verification was successful!", "otp_token", otpToken);
             }

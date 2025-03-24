@@ -47,9 +47,9 @@ public class AccountOperations {
     }
     
  
-    public Optional<Account> getAccountByIfscAndAccountNumber(String ifscCode, String accountNumber) {
-        return accountRepository.findByIfscCodeAndAccountNumber(ifscCode, accountNumber);
-    }
+//    public Optional<Account> getAccountByIfscAndAccountNumber(String ifscCode, String accountNumber) {
+//        return accountRepository.findByIfscCodeAndAccountNumber(ifscCode, accountNumber);
+//    }
 
     
     public void deleteAccount(Integer accountId) {

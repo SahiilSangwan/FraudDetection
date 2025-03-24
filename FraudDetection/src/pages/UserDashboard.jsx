@@ -16,7 +16,7 @@ const Dashboard = () => {
   };
 
   
-  const {account, getUserAccount} = useContext(UserContext);
+  const {account, getUserAccount, transactions, getUserTransacions} = useContext(UserContext);
   
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const username = storedUser?.name || "";
@@ -28,16 +28,10 @@ const Dashboard = () => {
   const [showTransactions, setShowTransactions] = useState(false);
   const [hoverAccNo, setHoverAccNo] = useState(false);
 
-  const transactions = [
-    { date: "2024-03-12", description: "Amazon Purchase", credit: "", debit: "₹1,200", balance: "₹49,800" },
-    { date: "2024-03-11", description: "Salary Credit", credit: "₹50,000", debit: "", balance: "₹51,000" },
-    { date: "2024-03-10", description: "Electricity Bill", credit: "", debit: "₹3,000", balance: "₹1,000" },
-    { date: "2024-03-09", description: "Netflix Subscription", credit: "", debit: "₹499", balance: "₹4,000" },
-  ];
-
 
     useEffect(()=>{
         getUserAccount()
+        getUserTransacions()
     },[])
 
   return (
@@ -108,17 +102,17 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.map((txn, index) => (
+                    {transactions.transactions.slice(0, 10).map((txn, index) => (
                       <tr key={index} className="text-center hover:bg-gray-200">
-                        <td className="border border-gray-300 p-2">{txn.date}</td>
+                        <td className="border border-gray-300 p-2">{txn.timestamp}</td>
                         <td className="border border-gray-300 p-2">{txn.description}</td>
-                        <td className={`border border-gray-300 p-2 ${txn.credit ? "text-green-600 font-bold" : "text-gray-500"}`}>
-                          {txn.credit || "-"}
+                        <td className={`border border-gray-300 p-2 ${txn.creditedAmount ? "text-green-600 font-bold" : "text-gray-500"}`}>
+                          {txn.creditedAmount || "-"}
                         </td>
-                        <td className={`border border-gray-300 p-2 ${txn.debit ? "text-red-600 font-bold" : "text-gray-500"}`}>
-                          {txn.debit || "-"}
+                        <td className={`border border-gray-300 p-2 ${txn.debitedAmount ? "text-red-600 font-bold" : "text-gray-500"}`}>
+                          {txn.debitedAmount || "-"}
                         </td>
-                        <td className="border border-gray-300 p-2 font-semibold">{txn.balance}</td>
+                        <td className="border border-gray-300 p-2 font-semibold">{txn.currentBalance}</td>
                       </tr>
                     ))}
                   </tbody>

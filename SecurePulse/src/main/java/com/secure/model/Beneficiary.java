@@ -18,7 +18,7 @@ public class Beneficiary {
     @Column(name = "beneficiary_name", nullable = false, length = 255)
     private String beneficiaryName;
 
-    @Column(name = "beneficiary_bank", nullable = false, length = 10)
+    @Column(name = "beneficiary_bank", nullable = false, length = 20)
     private String beneficiaryBank; // Directly storing the bank name
 
     @Column(name = "beneficiary_userid", nullable = false)
@@ -35,6 +35,19 @@ public class Beneficiary {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name="ifsc_code",nullable = false ,length = 20)
+    private String ifscCode;
+
+    public String getIfscCode() {
+        return ifscCode;
+    }
+
+    public void setIfscCode(String ifscCode) {
+        this.ifscCode = ifscCode;
+    }
+
+
 
     @PrePersist
     protected void onCreate() {

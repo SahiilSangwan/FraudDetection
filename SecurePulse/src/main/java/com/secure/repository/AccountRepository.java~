@@ -23,8 +23,6 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
 
     // Find all active accounts for a user
     List<Account> findByUserIdAndStatus(Integer userId, Account.AccountStatus status);
-    Account findByAccountNumberAndIfscCode(String accountNumber, String ifscCode);
-
 
     // Find all accounts for a user in a specific bank
     List<Account> findByUserIdAndBank(Integer userId, String bank);

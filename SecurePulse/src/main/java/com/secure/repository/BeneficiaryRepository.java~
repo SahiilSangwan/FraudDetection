@@ -42,6 +42,5 @@ public interface BeneficiaryRepository extends JpaRepository<Beneficiary, Intege
     List<Beneficiary> findByUserIdAndBeneficiaryBankNotAndUpdatedAtLessThanEqual(
             Integer userId, String beneficiaryBank, LocalDateTime updatedAt);
 
-    Beneficiary findByUserIdAndBeneficiaryUserId(Integer userId, Integer beneficiaryUserId);
 
 }

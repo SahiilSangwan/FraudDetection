@@ -149,4 +149,53 @@ public class BeneficiaryController {
             return ResponseEntity.status(500).body(response);
         }
     }
+
+    @GetMapping("transaction/{userId}")
+    public List<Beneficiary> getBeneficiariesTransaction(HttpServletRequest request,
+                                              @PathVariable Integer userId,
+                                              @RequestParam("same") boolean sameBank) {
+        // ✅ Extract JWT token from cookies
+        String token = jwtService.extractAuthToken(request);
+        if (token == null) {
+            throw new RuntimeException("❌ JWT token is missing.");
+        }
+
+        // ✅ Decode the JWT
+        DecodedJWT jwt = jwtService.extractClaims(token);
+        if (jwt == null) {
+            throw new RuntimeException("❌ Invalid JWT token.");
+        }
+
+        // ✅ Extract `userBank` from JWT
+        String userBank = jwt.getClaim("userBank").asString();
+        if (userBank == null || userBank.isEmpty()) {
+            throw new RuntimeException("❌ userBank not found in JWT.");
+        }
+
+        // ✅ Fetch beneficiaries based on bank filter
+        return beneficiaryOperations.getBeneficiariesForTransaction(userId, userBank,sameBank);
+    }
+
+    @GetMapping("/compare/{beneficiaryId}")
+    public Map<String,Object> compareBeneficiary(HttpServletRequest request,@PathVariable Integer beneficiaryId){
+        Map<String,Object> response=new HashMap<>();
+        try{
+            String token = jwtService.extractAuthToken(request);
+            if (token == null) {
+                response.put("success", false);
+                response.put("message", "Unauthorized: Token missing");
+                return response;
+            }
+
+            DecodedJWT decodedJWT = jwtService.extractClaims(token);
+            Integer userId = decodedJWT.getClaim("userId").asInt();
+            String userBank = decodedJWT.getClaim("userBank").asString();
+            response=beneficiaryOperations.compareBeneficiary(userId,beneficiaryId,userBank);
+            return response;
+        }catch (Exception e){
+            response.put("success", false);
+            response.put("message", "An unexpected error occurred: " + e.getMessage());
+            return response;
+        }
+    }
 }

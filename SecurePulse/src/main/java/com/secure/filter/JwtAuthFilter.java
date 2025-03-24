@@ -62,6 +62,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = jwtService.extractTokenFromCookies(request, tokenName);
         if (token != null) {
             System.out.println("🔑 Checking " + tokenName + ": " + token);
+            boolean ans=jwtService.validateToken(token);
+            System.out.println(ans);
             return jwtService.validateToken(token);
         }
         return false;

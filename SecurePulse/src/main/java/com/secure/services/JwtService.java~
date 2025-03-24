@@ -89,7 +89,7 @@ public class JwtService {
                 .withIssuedAt(new Date())
 
 
-                .withExpiresAt(new Date(System.currentTimeMillis() + 60 * 60 * 1000)) // 1 Hour Expiry
+                .withExpiresAt(new Date(System.currentTimeMillis() + 15 * 60 * 1000)) // 1 Hour Expiry
 
 
                 .sign(Algorithm.HMAC256(SECRET_KEY));
@@ -119,7 +119,7 @@ public class JwtService {
                 .withIssuedAt(new Date())
 
 
-                .withExpiresAt(new Date(System.currentTimeMillis() + 60 * 60 * 1000)) // 15 min expiry
+                .withExpiresAt(new Date(System.currentTimeMillis() + 15 * 60 * 1000)) // 15 min expiry
 
 
                 .sign(Algorithm.HMAC256(SECRET_KEY));

@@ -103,7 +103,7 @@ const BeneficiaryManager = () => {
                         <tr key={index} className="border-b">
                             <td className="py-2 text-center">{b.beneficiaryName}</td>
                             <td className="py-2 text-center">{b.beneficiaryAccountNumber}</td>
-                            <td className="py-2 text-center">{b.beneficiaryBank}</td>
+                            <td className="py-2 text-center">{b.ifscCode}</td>
                             <td className="py-2 text-center">₹{b.amount}</td>
                             <td className="py-2 flex justify-center gap-2">
                                 <button onClick={() => handleEdit(b.beneficiaryId)} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Update</button>

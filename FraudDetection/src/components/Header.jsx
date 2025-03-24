@@ -57,13 +57,13 @@ const Header = () => {
           </button>
           <div className="absolute left-0 mt-2 bg-white text-black rounded shadow-lg w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out">
             <Link
-              to="/transfer/same-bank"
+              to={`/transactions?bank=same`}
               className="block px-4 py-2 hover:bg-gray-200"
             >
               Same Bank Transfer
             </Link>
             <Link
-              to="/transfer/different-bank"
+              to={`/transactions?bank=notSame`}
               className="block px-4 py-2 hover:bg-gray-200"
             >
               Different Bank Transfer
@@ -72,7 +72,7 @@ const Header = () => {
         </div>
 
         {/* Transaction History */}
-        <Link to="/transactions" className="hover:underline">
+        <Link to="/transaction-history" className="hover:underline">
           Transaction History
         </Link>
 
