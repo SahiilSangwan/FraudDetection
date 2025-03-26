@@ -1,13 +1,14 @@
 
 package com.secure.operations;
 
-import com.secure.model.Beneficiary;
-import com.secure.model.Transaction;
-import com.secure.model.TransactionSummary;
+import com.secure.model.*;
 import com.secure.repository.AccountRepository;
 import com.secure.repository.BeneficiaryRepository;
 import com.secure.repository.TransactionRepository;
+import com.secure.repository.UserRepository;
+import com.secure.services.EmailService;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,13 +16,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import com.secure.model.Account;
-
 @Service
 public class TransactionOperations {
     private final AccountRepository accountRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final TransactionRepository transactionRepository;
+    @Autowired
+    private  UserRepository userRepository;
+    @Autowired
+    private EmailService emailService;
 
     private static final Map<String, Object> accountLocks = new ConcurrentHashMap<>();
 
@@ -145,6 +148,7 @@ public class TransactionOperations {
                     accountRepository.save(sender);
                     accountRepository.save(receiver);
                     System.out.println("✅ Account Balances Updated!");
+                    System.out.println(description);
 
                     // Create transaction record
                     Transaction transaction = new Transaction();
@@ -159,7 +163,134 @@ public class TransactionOperations {
                     transaction.setCurrentBalanceReceiver(receiver.getBalance());
 
                     transactionRepository.save(transaction);
+                    System.out.println(transaction);
                     System.out.println("✅ Transaction Recorded: " + transaction);
+
+                    Optional<User> user=userRepository.findById(senderId);
+                    Optional<User> user2=userRepository.findById(receiverId);
+                    String senderEmail=user.get().getEmail();
+                    String recieverEmail=user2.get().getEmail();
+
+                    String senderSubject = "Account Debited - Transaction Alert";
+
+                    String senderMessageBody = "<!DOCTYPE html>" +
+                            "<html>" +
+                            "<head>" +
+                            "    <style>" +
+                            "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
+                            "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
+                            "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
+                            "        .header h1 { color: #ffffff; margin: 0; }" +
+                            "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
+                            "        .content { padding: 30px; text-align: center; }" +
+                            "        .transaction-icon { color: #e74c3c; font-size: 48px; margin-bottom: 20px; }" +
+                            "        .details-box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
+                            "        .details-box p { margin: 10px 0; }" +
+                            "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
+                            "        .button { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }" +
+                            "        .note { color: #e74c3c; font-size: 13px; margin-top: 20px; font-style: italic; }" +
+                            "        .divider { border-top: 1px solid #eee; margin: 25px 0; }" +
+                            "    </style>" +
+                            "</head>" +
+                            "<body>" +
+                            "    <div class='container'>" +
+                            "        <div class='header'>" +
+                            "            <h1>SecurePulse</h1>" +
+                            "            <p>by WISSEN Technology</p>" +
+                            "        </div>" +
+                            "        <div class='content'>" +
+                            "            <div class='transaction-icon'>↓</div>" +
+                            "            <h2 style='color: #2c3e50;'>Account Debit Notification</h2>" +
+                            "            " +
+                            "            <div class='details-box'>" +
+                            "                <p><strong>Transaction Amount:</strong> <span style='color: #e74c3c;'>-₹" + amount + "</span></p>" +
+                            "                <p><strong>Date & Time:</strong> " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy")) + "</p>" +
+                            "                <p><strong>Available Balance:</strong> ₹" + sender.getBalance() + "</p>" +
+                            "                <p><strong>Transaction ID:</strong> " + transaction.getTransactionId() + "</p>" +
+                            "                <p><strong>Recipient:</strong> " + receiver.getAccountNumber() + "</p>" +
+                            "            </div>" +
+                            "            " +
+                            "            <p>If you recognize this transaction, no further action is needed.</p>" +
+                            "            " +
+                            "            <div class='divider'></div>" +
+                            "            " +
+                            "            <a href='https://securepulse.com/transactions' class='button'>View Transaction Details</a>" +
+                            "            " +
+                            "            <div class='note'>" +
+                            "                <p>If you did not authorize this transaction, please contact us immediately at <a href='mailto:support@securepulse.com' style='color: #3498db;'>support@securepulse.com</a> or call +1 (800) 123-4567.</p>" +
+                            "            </div>" +
+                            "        </div>" +
+                            "        <div class='footer'>" +
+                            "            <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
+                            "            <p>123 Tech Park, Innovation City | support@securepulse.com</p>" +
+                            "        </div>" +
+                            "    </div>" +
+                            "</body>" +
+                            "</html>";
+
+                    emailService.sendEmail(senderEmail,senderSubject,senderMessageBody);
+
+
+
+
+                    String subject = "Account Credited - Payment Received";
+
+                    String messageBody = "<!DOCTYPE html>" +
+                            "<html>" +
+                            "<head>" +
+                            "    <style>" +
+                            "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
+                            "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
+                            "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
+                            "        .header h1 { color: #ffffff; margin: 0; }" +
+                            "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
+                            "        .content { padding: 30px; text-align: center; }" +
+                            "        .credit-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }" +
+                            "        .details-box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
+                            "        .details-box p { margin: 10px 0; }" +
+                            "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
+                            "        .button { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }" +
+                            "        .divider { border-top: 1px solid #eee; margin: 25px 0; }" +
+                            "    </style>" +
+                            "</head>" +
+                            "<body>" +
+                            "    <div class='container'>" +
+                            "        <div class='header'>" +
+                            "            <h1>SecurePulse</h1>" +
+                            "            <p>by WISSEN Technology</p>" +
+                            "        </div>" +
+                            "        <div class='content'>" +
+                            "            <div class='credit-icon'>↑</div>" +
+                            "            <h2 style='color: #2c3e50;'>Payment Received</h2>" +
+                            "            " +
+                            "            <div class='details-box'>" +
+                            "                <p><strong>Amount Credited:</strong> <span style='color: #2ecc71;'>+₹" + amount + "</span></p>" +
+                            "                <p><strong>Date & Time:</strong> " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy")) + "</p>" +
+                            "                <p><strong>Available Balance:</strong> ₹" + receiver.getBalance() + "</p>" +
+                            "                <p><strong>Transaction ID:</strong> " + transaction.getTransactionId() + "</p>" +
+                            "                <p><strong>Sender:</strong> " + user.get().getFirstName()+" "+user.get().getLastName() + "</p>" +
+                            "                <p><strong>Reference:</strong> " + description + "</p>" +
+                            "            </div>" +
+                            "            " +
+                            "            <p>This amount is now available in your account.</p>" +
+                            "            " +
+                            "            <div class='divider'></div>" +
+                            "            " +
+                            "            <a href='https://securepulse.com/transactions' class='button'>View Transaction History</a>" +
+                            "            " +
+                            "            <p style='font-size: 13px; color: #7f8c8d;'>Thank you for using SecurePulse services.</p>" +
+                            "        </div>" +
+                            "        <div class='footer'>" +
+                            "            <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
+                            "            <p>123 Tech Park, Innovation City | support@securepulse.com</p>" +
+                            "        </div>" +
+                            "    </div>" +
+                            "</body>" +
+                            "</html>";
+
+                            emailService.sendEmail(recieverEmail,subject,messageBody);
+
+
 
                     return Map.of("status", true, "message", "Transaction successful", "transactionId", transaction.getTransactionId());
                 } catch (Exception e) {

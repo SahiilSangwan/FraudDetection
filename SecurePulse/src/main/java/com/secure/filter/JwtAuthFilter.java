@@ -38,7 +38,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         // ✅ For `/api/users/sendotp` & `/api/users/verifyotp` → Require `auth_token`
-        if (requestURI.startsWith("/api/users/sendotp") || requestURI.startsWith("/api/users/verifyotp")) {
+        if ( requestURI.startsWith("/api/alert") || requestURI.startsWith("/api/users/sendotp") || requestURI.startsWith("/api/users/verifyotp") || requestURI.startsWith("/api/users/logout")) {
             if (!validateTokenFromCookie(request, "auth_token")) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "❌ Forbidden: Invalid auth_token");
                 return;

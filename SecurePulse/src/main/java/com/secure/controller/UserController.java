@@ -2,6 +2,8 @@ package com.secure.controller;
 
 
 
+import com.secure.model.BlockedUser;
+import com.secure.repository.BlockedUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +18,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 
-
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -28,6 +31,9 @@ public class UserController {
 
 	 @Autowired
 	 private JwtService jwtService;
+
+     @Autowired
+    BlockedUserRepository  blockedUserRepository;
 
     @Autowired
     private UserOperations dataOperations;
@@ -93,6 +99,23 @@ public class UserController {
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
+            Optional<BlockedUser> isBlocked = blockedUserRepository.findByEmailAndBankName(email,bank);
+            if (isBlocked.isPresent()) {
+                BlockedUser blockedUser = isBlocked.get();
+
+                Instant createdAt = blockedUser.getCreatedAt().toInstant();
+                Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+
+                if (createdAt.isBefore(oneHourAgo)) {
+                    blockedUserRepository.delete(blockedUser);
+                } else {
+
+                    return Map.of(
+                            "status", false,
+                            "message", "User is blocked for malicious activity."
+                    );
+                }
+            }
             String token = jwtService.generateToken(user, bank);
 
             // Create HttpOnly cookie
@@ -139,14 +162,49 @@ public class UserController {
         String otp = otpService.generateOtp(email);
 
         // Construct OTP message
-        String subject = "Your Secure OTP for Verification";
-        String messageBody = "<div style='font-family: Arial, sans-serif; text-align: center;'>" +
-                             "<h2 style='color: #333;'>Your One-Time Password (OTP)</h2>" +
-                             "<p>Please use the following OTP to verify your identity:</p>" +
-                             "<h1 style='color: #007BFF; font-size: 36px;'>" + otp + "</h1>" +
-                             "<p>This OTP is valid for only 5 minutes. Do not share it with anyone.</p>" +
-                             "<p>Thank you,<br><strong>SecurePulse Team</strong></p>" +
-                             "</div>";
+        String subject = "Your SecurePulse OTP - Verify Your Identity";
+
+        String messageBody = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "    <style>" +
+                "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
+                "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
+                "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
+                "        .header img { max-width: 180px; }" +
+                "        .content { padding: 30px; text-align: center; }" +
+                "        .otp-code { font-size: 36px; font-weight: bold; color: #3498db; letter-spacing: 3px; margin: 20px 0; padding: 10px 20px; background: #f0f8ff; display: inline-block; border-radius: 5px; }" +
+                "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
+                "        .company-info { margin-top: 10px; font-size: 14px; color: #555; }" +
+                "        .note { color: #e74c3c; font-size: 13px; margin-top: 20px; font-style: italic; }" +
+                "        .divider { border-top: 1px solid #eee; margin: 25px 0; }" +
+                "    </style>" +
+                "</head>" +
+                "<body>" +
+                "    <div class='container'>" +
+                "        <div class='header'>" +
+                "            <h1 style='color: #ffffff; margin: 0;'>SecurePulse</h1>" +
+                "            <p style='color: #ecf0f1; margin: 5px 0 0; font-size: 14px;'>by WISSEN Technology</p>" +
+                "        </div>" +
+                "        <div class='content'>" +
+                "            <h2 style='color: #2c3e50;'>Your One-Time Password</h2>" +
+                "            <p>To complete your verification, please enter the following OTP code:</p>" +
+                "            <div class='otp-code'>" + otp + "</div>" +
+                "            <p>This code will expire in <strong>5 minutes</strong>.</p>" +
+                "            <div class='note'>For your security, please do not share this code with anyone.</div>" +
+                "            <div class='divider'></div>" +
+                "            <p>If you didn't request this OTP, please ignore this email or contact our support team immediately.</p>" +
+                "        </div>" +
+                "        <div class='footer'>" +
+                "            <p>© 2025 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
+                "            <div class='company-info'>" +
+                "                <p>123 Embassey Tech Park, Bengaluru</p>" +
+                "                <p>support@securepulse.com | +91 12389-04567</p>" +
+                "            </div>" +
+                "        </div>" +
+                "    </div>" +
+                "</body>" +
+                "</html>";
 
         // Send email with formatted OTP
         emailService.sendEmail(email, subject, messageBody);
@@ -180,6 +238,65 @@ public class UserController {
                 cookie.setPath("/");
                 cookie.setMaxAge(3600 ); // Expiry time (15 minutes)
                 httpResponse.addCookie(cookie);
+
+
+                String subject = "Successful Login Detected - SecurePulse Account";
+
+                String messageBody = "<!DOCTYPE html>" +
+                        "<html>" +
+                        "<head>" +
+                        "    <style>" +
+                        "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
+                        "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
+                        "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
+                        "        .header h1 { color: #ffffff; margin: 0; }" +
+                        "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
+                        "        .content { padding: 30px; text-align: center; }" +
+                        "        .success-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }" +
+                        "        .login-details { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
+                        "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
+                        "        .button { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }" +
+                        "        .note { color: #e74c3c; font-size: 13px; margin-top: 20px; font-style: italic; }" +
+                        "        .divider { border-top: 1px solid #eee; margin: 25px 0; }" +
+                        "    </style>" +
+                        "</head>" +
+                        "<body>" +
+                        "    <div class='container'>" +
+                        "        <div class='header'>" +
+                        "            <h1>SecurePulse</h1>" +
+                        "            <p>by WISSEN Technology</p>" +
+                        "        </div>" +
+                        "        <div class='content'>" +
+                        "            <div class='success-icon'>✓</div>" +
+                        "            <h2 style='color: #2c3e50;'>Login Successful</h2>" +
+                        "            <p>You have successfully accessed your SecurePulse account.</p>" +
+                        "            " +
+                        "            <div class='login-details'>" +
+                        "                <p><strong>Date & Time:</strong> " + new java.util.Date() + "</p>" +
+                        "            </div>" +
+                        "            " +
+                        "            <p>If this was you, no further action is required.</p>" +
+                        "            " +
+                        "            <div class='divider'></div>" +
+                        "            " +
+                        "            <a href='' class='button'>Go to My Account</a>" +
+                        "            " +
+                        "            <div class='note'>" +
+                        "                <p>If you didn't perform this login, please secure your account immediately by changing your password and contact our support team.</p>" +
+                        "            </div>" +
+                        "        </div>" +
+                        "        <div class='footer'>" +
+                        "            <p>© 2025 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
+                        "            <p>123 Embassey Tech Park, Bengaluru | support@securepulse.com</p>" +
+                        "        </div>" +
+                        "    </div>" +
+                        "</body>" +
+                        "</html>";
+
+                emailService.sendEmail(email, subject, messageBody);
+
+
+
                 return Map.of("otpVerified", true, "message", "OTP verification was successful!", "otp_token", otpToken);
             }
 

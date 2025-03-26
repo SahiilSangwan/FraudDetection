@@ -5,36 +5,83 @@ import { assets } from '../assets/assets';
 const Home = () => {
   const navigate = useNavigate();
 
-  // Handle bank selection and navigate to login
   const handleBankClick = (bankName) => {
-    localStorage.setItem('bank',bankName)
+    localStorage.setItem('bank', bankName);
     navigate("/login");
   };
 
+  const banks = [
+    { name: 'SBI', logo: assets?.sbi || 'fallback-image.png' },
+    { name: 'HDFC', logo: assets?.hdfc || 'fallback-image.png' },
+    { name: 'ICICI', logo: assets?.icici || 'fallback-image.png' }
+  ];
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold mb-8">Choose Your Bank</h1>
-      <div className="flex space-x-8">
-        {/* Bank Image Buttons */}
-        <img
-          src={assets?.sbi || 'fallback-image.png'} 
-          alt="SBI"
-          className="w-32 h-32 cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => handleBankClick('sbi')}
-        />
-        <img
-          src={assets?.hdfc || 'fallback-image.png'}
-          alt="HDFC"
-          className="w-32 h-32 cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => handleBankClick('hdfc')}
-        />
-        <img
-          src={assets?.icici || 'fallback-image.png'}
-          alt="ICICI"
-          className="w-32 h-32 cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => handleBankClick('icici')}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
+      {/* Animated header */}
+      <div className="text-center mb-12 animate-fade-in">
+        <h1 className="text-5xl font-bold text-gray-800 mb-4">
+          Welcome to <span className="text-blue-600">Digital</span> Banking
+        </h1>
+        <p className="text-xl text-gray-600 max-w-2xl">
+          Select your bank to continue to secure login
+        </p>
       </div>
+
+      {/* Bank cards with hover effects */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-6xl w-full">
+        {banks.map((bank, index) => (
+          <div 
+            key={bank.name}
+            className="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 animate-fade-in-up"
+            style={{ animationDelay: `${index * 100}ms` }}
+            onClick={() => handleBankClick(bank.name.toLowerCase())}
+          >
+            <div className="p-8 flex flex-col items-center">
+              <div className="w-40 h-40 mb-6 flex items-center justify-center">
+                <img 
+                  src={bank.logo} 
+                  alt={bank.name} 
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-2">{bank.name}</h3>
+              <button className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">
+                Select
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer note */}
+      <div className="mt-16 text-center text-gray-500 text-sm">
+        <p>Your banking experience is protected with strong encryption for added security.</p>
+      </div>
+
+      {/* Add these animations to your global CSS */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeInUp {
+          from { 
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.8s ease-out;
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };

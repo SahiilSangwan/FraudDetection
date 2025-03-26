@@ -16,7 +16,7 @@ const Dashboard = () => {
   };
 
   
-  const {account, getUserAccount, transactions, getUserTransacions} = useContext(UserContext);
+  const {account, getUserAccount, transactions, getUserTransacions, getBankTheme} = useContext(UserContext);
   
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const username = storedUser?.name || "";
@@ -35,97 +35,154 @@ const Dashboard = () => {
     },[])
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <Header />
+    
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        {/* Header */}
+        <Header />
 
-      {/* Main Content */}
-      <main className="flex-grow flex justify-center items-center bg-gray-100">
-        <div className="max-w-4xl w-full p-6 bg-white shadow-lg rounded-lg">
-          {/* Bank Logo & User Info */}
-          <div className="flex items-center space-x-4 mb-6">
-            <img src={bankLogos[bank]} alt={`${bank} Logo`} className="w-16 h-16" />
-            <div>
-              <h2 className="text-2xl font-bold">{bank.toUpperCase()} Net Banking</h2>
-              <p className="text-gray-700"><strong>Account Holder:</strong> {accountHolder}</p>
+        {/* Main Content */}
+        <main className="flex-grow flex justify-center items-center p-4">
+          <div className={`max-w-4xl w-full bg-white rounded-xl shadow-xl overflow-hidden ${getBankTheme(bank).border}`}>
+            {/* Bank Header with Gradient */}
+            <div className={`${getBankTheme(bank).header} p-6`}>
+              <div className="flex items-center space-x-4">
+                <img 
+                  src={bankLogos[bank]} 
+                  alt={`${bank} Logo`} 
+                  className="w-16 h-16 bg-white p-1 rounded-full shadow-md" 
+                />
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{bank.toUpperCase()} Internet Banking</h2>
+                  <p className="text-white/90">Welcome back, <span className="font-medium">{accountHolder}</span></p>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Summary */}
+            <div className="p-6">
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-6 h-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l9-4 9 4m-9-4v20m-6-9h12M6 9h12" />
+                  </svg>
+                  Account Summary
+                </h3>
+
+                <div className="space-y-4">
+                  {/* Account Number */}
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                      </svg>
+                      <span className="text-gray-700">Account Number</span>
+                    </div>
+                    <div 
+                      className="font-mono cursor-pointer relative group"
+                      onMouseEnter={() => setHoverAccNo(true)}
+                      onMouseLeave={() => setHoverAccNo(false)}
+                    >
+                      {hoverAccNo ? (
+                        <span className="text-gray-900 font-medium">{accNumber}</span>
+                      ) : (
+                        <span className="tracking-widest">•••• •••• •••• {accNumber.slice(-4)}</span>
+                      )}
+                      <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
+                    </div>
+                  </div>
+
+                  {/* Balance */}
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-gray-700">Available Balance</span>
+                    </div>
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => setShowBalance(!showBalance)}
+                    >
+                      {showBalance ? (
+                        <span className="text-2xl font-bold text-gray-900">₹{balance.toLocaleString()}</span>
+                      ) : (
+                        <span className="text-2xl font-bold tracking-widest">•••••</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transactions Section */}
+              <div className="mt-8">
+                <button
+                  onClick={() => setShowTransactions(!showTransactions)}
+                  className={`w-full ${getBankTheme(bank).button} text-white py-3 px-4 rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center space-x-2`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  <span>{showTransactions ? "Hide Transactions" : "View Recent Transactions"}</span>
+                </button>
+
+                {showTransactions && (
+                  <div className="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                        <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Recent Transactions
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit</th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit</th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {transactions.transactions.slice(0, 10).map((txn, index) => (
+                            <tr key={index} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {new Date(txn.timestamp).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                                {txn.description}
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                                txn.creditedAmount ? "text-green-600 font-medium" : "text-gray-500"
+                              }`}>
+                                {txn.creditedAmount ? `+₹${txn.creditedAmount.toLocaleString()}` : "-"}
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                                txn.debitedAmount ? "text-red-600 font-medium" : "text-gray-500"
+                              }`}>
+                                {txn.debitedAmount ? `-₹${txn.debitedAmount.toLocaleString()}` : "-"}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                                ₹{txn.currentBalance.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        </main>
 
-          {/* Account Summary */}
-          <div className="bg-blue-100 p-4 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold">Account Summary</h3>
-
-            {/* Account Number with Hover Effect */}
-            <p className="mt-2 text-gray-700">
-              <strong>Account Number: </strong>
-              <span
-                className="relative font-bold cursor-pointer"
-                onMouseEnter={() => setHoverAccNo(true)}
-                onMouseLeave={() => setHoverAccNo(false)}
-              >
-                {hoverAccNo ? accNumber : `**** **** **** ${accNumber.slice(-4)}`}
-              </span>
-            </p>
-
-            {/* Balance Visibility Toggle */}
-            <p className="mt-2 text-gray-700">
-              <strong>Balance: </strong>
-              <span
-                className="cursor-pointer text-blue-600 font-semibold"
-                onClick={() => setShowBalance(!showBalance)}
-              >
-                {showBalance ? balance : "*****"}
-              </span>
-            </p>
-          </div>
-
-          {/* Transactions Section */}
-          <div className="mt-6">
-            <button
-              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
-              onClick={() => setShowTransactions(!showTransactions)}
-            >
-              {showTransactions ? "Hide Transactions" : "Show Last 10 Transactions"}
-            </button>
-
-            {showTransactions && (
-              <div className="mt-4 bg-gray-100 p-4 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-3">Last 10 Transactions</h3>
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-blue-500 text-white">
-                      <th className="border border-gray-300 p-2">Date</th>
-                      <th className="border border-gray-300 p-2">Description</th>
-                      <th className="border border-gray-300 p-2">Credit</th>
-                      <th className="border border-gray-300 p-2">Debit</th>
-                      <th className="border border-gray-300 p-2">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.transactions.slice(0, 10).map((txn, index) => (
-                      <tr key={index} className="text-center hover:bg-gray-200">
-                        <td className="border border-gray-300 p-2">{txn.timestamp}</td>
-                        <td className="border border-gray-300 p-2">{txn.description}</td>
-                        <td className={`border border-gray-300 p-2 ${txn.creditedAmount ? "text-green-600 font-bold" : "text-gray-500"}`}>
-                          {txn.creditedAmount || "-"}
-                        </td>
-                        <td className={`border border-gray-300 p-2 ${txn.debitedAmount ? "text-red-600 font-bold" : "text-gray-500"}`}>
-                          {txn.debitedAmount || "-"}
-                        </td>
-                        <td className="border border-gray-300 p-2 font-semibold">{txn.currentBalance}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <Footer />
-    </div>
+        {/* Footer */}
+        <Footer />
+      </div>
   );
 };
 

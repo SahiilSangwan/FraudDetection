@@ -22,7 +22,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [captcha, setCaptcha] = useState('');
   const [generatedCaptcha, setGeneratedCaptcha] = useState('');
-  const {setUToken, backendUrl} = useContext(UserContext);
+  const {setUToken, backendUrl,getBankTheme} = useContext(UserContext);
 
   const canvasRef = useRef(null);
 
@@ -95,84 +95,126 @@ const Login = () => {
     }
 }
 
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
 
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        {/* Bank Logo */}
-        <div className="flex justify-center mb-4">
-          <img
-            src={bankLogos[bank] || 'fallback-image.png'}
-            alt={`${bank.toUpperCase()} Logo`}
-            className="w-24 h-24"
-          />
-        </div>
-
-        <h2 className="text-2xl font-bold text-center mb-4">
-          Login to {bank.toUpperCase()}
-        </h2>
-
-        {/* Login Form */}
-        <form onSubmit={onSubmit}>
-          {/* Email Field */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Email</label>
-            <input
-              type="email"
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Password Field */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Password</label>
-            <input
-              type="password"
-              className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* CAPTCHA Section */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Enter CAPTCHA</label>
-            <div className="flex items-center">
-              <canvas ref={canvasRef} width="120" height="40" className="border rounded" />
-              <button
-                type="button"
-                onClick={generateCaptcha}
-                className="ml-2 text-sm bg-gray-300 px-2 py-1 rounded"
-              >
-                Refresh
-              </button>
+        <div className={`min-h-screen flex items-center justify-center p-4 ${getBankTheme(bank).background}`}>
+          <div className={`bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-md ${getBankTheme(bank).border}`}>
+            {/* Bank Header with Dynamic Theme */}
+            <div className={`${getBankTheme(bank).header} p-6 text-center`}>
+              <div className="flex justify-center mb-3">
+                <img
+                  src={bankLogos[bank] || 'fallback-image.png'}
+                  alt={`${bank.toUpperCase()} Logo`}
+                  className="w-16 h-16 object-contain"
+                />
+              </div>
+              <h2 className="text-2xl font-bold text-white">
+                Secure Login to {bank.toUpperCase()}
+              </h2>
             </div>
-            <input
-              type="text"
-              className="w-full p-2 border border-gray-300 rounded mt-2"
-              placeholder="Enter CAPTCHA here"
-              value={captcha}
-              onChange={(e) => setCaptcha(e.target.value)}
-              required
-            />
-          </div>
 
-          {/* Login Button */}
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
-          >
-            Login
-          </button>
-        </form>
-      </div>
-    </div>
+            {/* Login Form */}
+            <form onSubmit={onSubmit} className="p-8">
+              {/* Email Field */}
+              <div className="mb-6">
+                <label htmlFor="email" className="block text-gray-700 font-medium mb-2">Email Address</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    className={`w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 ${getBankTheme(bank).focus} transition`}
+                    placeholder="your.email@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="mb-6">
+                <label htmlFor="password" className="block text-gray-700 font-medium mb-2">Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <input
+                    id="password"
+                    type="password"
+                    className={`w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 ${getBankTheme(bank).focus} transition`}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end mt-2">
+                  <a href="#" className={`text-sm ${getBankTheme(bank).link}`}>Forgot password?</a>
+                </div>
+              </div>
+
+              {/* Compact CAPTCHA Section */}
+              <div className="mb-6">
+                <label htmlFor="captcha" className="block text-gray-700 font-medium mb-2">Security Code</label>
+                <div className="flex items-center space-x-2">
+                  <canvas 
+                    ref={canvasRef} 
+                    width="120" 
+                    height="40" 
+                    className="border border-gray-300 rounded bg-gray-50 flex-grow h-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={generateCaptcha}
+                    className={`p-1.5 rounded-md ${getBankTheme(bank).buttonSecondary}`}
+                    aria-label="Refresh CAPTCHA"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
+                <input
+                  id="captcha"
+                  type="text"
+                  className={`w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 ${getBankTheme(bank).focus} transition`}
+                  placeholder="Enter code"
+                  value={captcha}
+                  onChange={(e) => setCaptcha(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Login Button with Bank Theme */}
+              <button
+                type="submit"
+                className={`w-full ${getBankTheme(bank).button} text-white py-3 px-4 rounded-lg font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-md transition-all`}
+              >
+                Sign In
+              </button>
+
+            </form>
+
+            {/* Security Footer */}
+            <div className="bg-gray-50 px-8 py-3 border-t border-gray-200">
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs text-gray-600">Secure strong encryption</span>
+              </div>
+            </div>
+          </div>
+        </div>
   );
 };
 

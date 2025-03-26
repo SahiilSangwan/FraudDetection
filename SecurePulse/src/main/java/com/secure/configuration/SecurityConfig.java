@@ -38,8 +38,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Disable CSRF for APIs
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // No session
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users", "/api/users/login").permitAll() // Public routes
-                        .requestMatchers("/api/users/sendotp", "/api/users/verifyotp").access((authentication, context) -> {
+                        .requestMatchers("/api/users", "/api/users/login","/api/users/logout").permitAll() // Public routes
+                        .requestMatchers("/api/users/sendotp", "/api/users/verifyotp","/api/alert/warning/{purpose}","/api/alert/block").access((authentication, context) -> {
                             HttpServletRequest request = context.getRequest();
                             String authToken = jwtService.extractTokenFromCookies(request, "auth_token");
                             boolean isValidAuthToken = authToken != null && jwtService.validateToken(authToken);

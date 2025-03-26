@@ -27,95 +27,116 @@ const TransactionHistory = () => {
 
   return (
 
-    <div className="flex flex-col min-h-screen">
-    {/* Header */}
-    <Header />
+    <div className="flex flex-col min-h-screen bg-gray-50">
+        {/* Header */}
+        <Header />
 
-            <div className="flex-grow w-[75%] mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
+        <div className="flex-grow w-full max-w-6xl mx-auto py-8 px-4 sm:px-6">
+          <div className="bg-white shadow-sm rounded-xl overflow-hidden">
             {/* Filter Section */}
-            <div className="w-full max-w-5xl mx-auto flex items-center justify-between mb-6 p-4 bg-gray-100 rounded-lg">
-                <select
-                className="p-2 border rounded-lg text-gray-700"
-                onChange={(e) => setFilterType(e.target.value)}
-                >
-                <option value="month">Filter by Month</option>
-                <option value="date">Filter by Date</option>
-                </select>
+            <div className="p-6 border-b border-gray-100">
+              <h1 className="text-2xl font-bold text-gray-800 mb-6">Transaction History</h1>
+              
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                <div className="relative flex-1 w-full">
+                  <select
+                    className="w-full p-3 pl-4 pr-8 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9Ii82QjcyODkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSI2IDkgMTIgMTUgMTggOSI+PC9wb2x5bGluZT48L3N2Zz4=')] bg-no-repeat bg-[right_1rem_center]"
+                    onChange={(e) => setFilterType(e.target.value)}
+                  >
+                    <option value="month">Filter by Month</option>
+                    <option value="date">Filter by Date</option>
+                  </select>
+                </div>
 
                 {filterType === "month" ? (
-                <select
-                    className="p-2 border rounded-lg text-gray-700"
-                    onChange={(e) => setSelectedValue(e.target.value)}
-                >
-                    <option value="">Select Month</option>
-                    {Array.from({ length: 12 }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                        {new Date(0, i).toLocaleString("default", { month: "long" })}
-                    </option>
-                    ))}
-                </select>
+                  <div className="relative flex-1 w-full">
+                    <select
+                      className="w-full p-3 pl-4 pr-8 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9Ii82QjcyODkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSI2IDkgMTIgMTUgMTggOSI+PC9wb2x5bGluZT48L3N2Zz4=')] bg-no-repeat bg-[right_1rem_center]"
+                      onChange={(e) => setSelectedValue(e.target.value)}
+                    >
+                      <option value="">Select Month</option>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {new Date(0, i).toLocaleString("default", { month: "long" })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 ) : (
-                <input
-                    type="date"
-                    className="p-2 border rounded-lg text-gray-700"
-                    onChange={(e) => setSelectedValue(e.target.value)}
-                />
+                  <div className="relative flex-1 w-full">
+                    <input
+                      type="date"
+                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onChange={(e) => setSelectedValue(e.target.value)}
+                    />
+                  </div>
                 )}
+              </div>
             </div>
 
             {/* Transactions Table */}
             <div className="overflow-x-auto">
-                <table className="w-full text-center border border-gray-300">
-                <thead className="bg-gray-700 text-white">
-                    <tr>
-                    <th className="p-3 border">Timestamp</th>
-                    <th className="p-3 border">Description</th>
-                    <th className="p-3 border">Credited</th>
-                    <th className="p-3 border">Debited</th>
-                    <th className="p-3 border">Balance</th>
-                    </tr>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date & Time
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Credit
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Debit
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Balance
+                    </th>
+                  </tr>
                 </thead>
-                <tbody>
-                    {filteredTransactions.length > 0 ? (
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredTransactions.length > 0 ? (
                     filteredTransactions.map((txn, index) => (
-                        <tr
-                        key={index}
-                        className="border border-gray-300 hover:bg-gray-100 transition"
-                        >
-                        <td className="p-3 border">{txn.timestamp}</td>
-                        <td className="p-3 border">{txn.description}</td>
-                        <td
-                            className={`p-3 border ${
-                            txn.creditedAmount ? "text-green-600 font-bold" : "text-gray-400"
-                            }`}
-                        >
-                            {txn.creditedAmount || "-"}
+                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(txn.timestamp).toLocaleString()}
                         </td>
-                        <td
-                            className={`p-3 border ${
-                            txn.debitedAmount ? "text-red-600 font-bold" : "text-gray-400"
-                            }`}
-                        >
-                            {txn.debitedAmount || "-"}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {txn.description}
                         </td>
-                        <td className="p-3 border font-semibold">{txn.currentBalance}</td>
-                        </tr>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                          txn.creditedAmount ? "text-green-600 font-medium" : "text-gray-400"
+                        }`}>
+                          {txn.creditedAmount ? `+₹${txn.creditedAmount.toLocaleString()}` : "-"}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                          txn.debitedAmount ? "text-red-600 font-medium" : "text-gray-400"
+                        }`}>
+                          {txn.debitedAmount ? `-₹${txn.debitedAmount.toLocaleString()}` : "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                          ₹{txn.currentBalance.toLocaleString()}
+                        </td>
+                      </tr>
                     ))
-                    ) : (
+                  ) : (
                     <tr>
-                        <td colSpan="5" className="p-3 text-gray-500">
-                        No transactions found.
-                        </td>
+                      <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No transactions found for selected filter
+                      </td>
                     </tr>
-                    )}
+                  )}
                 </tbody>
-                </table>
+              </table>
             </div>
-            </div>
+          </div>
+        </div>
 
-    {/* Footer */}
-      <Footer />
-    </div>
+        {/* Footer */}
+        <Footer />
+      </div>
   );
 };
 
