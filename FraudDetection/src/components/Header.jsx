@@ -1,7 +1,8 @@
-import React, { useContext } from 'react'
+import React, { useContext, useEffect } from 'react'
 import { Link } from "react-router-dom";
 import { UserContext } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import { assets } from '../assets/assets';
 
 const Header = () => {
@@ -28,6 +29,22 @@ const Header = () => {
     localStorage.removeItem('user')
     logoutuser()
 }
+
+    useEffect(() => {
+      const lastTriggeredTime = localStorage.getItem('lastTriggeredTime');
+      const currentTime = new Date().getTime();
+  
+      if (!lastTriggeredTime || currentTime - lastTriggeredTime >= 3600000) {
+        toast.warn("Session will expire in 5 minutes. Please save your work.",);
+        setTimeout(() => {
+          toast.warn("Session expired. Please login again.",);
+          localStorage.removeItem('lastTriggeredTime');
+          logout();  
+        }, 300000);
+      }
+  
+    }, []);
+
 
   return (
     <header className={`bg-gradient-to-r ${getBankTheme(bank).header} text-white p-4 shadow-lg`}>

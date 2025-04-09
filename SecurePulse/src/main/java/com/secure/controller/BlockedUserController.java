@@ -158,6 +158,7 @@ public class BlockedUserController {
         BlockedUser blockedUser = new BlockedUser();
         blockedUser.setEmail(userEmail);
         blockedUser.setBankName(userBank);
+        blockedUser.setReason(reason);
 
         String subject = "Urgent: Your SecurePulse Account Has Been Blocked";
 

@@ -5,6 +5,7 @@ package com.secure.controller;
 import com.secure.model.BlockedUser;
 import com.secure.repository.BlockedUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.secure.model.User;
@@ -51,13 +52,15 @@ public class UserController {
 
     @PostMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
-        // Invalidate the session
-        request.getSession().invalidate();
 
-        // Get all cookies and set them to expire
+
+
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
+                if(cookie.getName().equals("admin_token")) {
+                    continue;
+                }
                 cookie.setValue("");
                 cookie.setPath("/");
                 cookie.setMaxAge(0); // Expire the cookie immediately
@@ -65,8 +68,6 @@ public class UserController {
             }
         }
 
-        // Optionally, clear authentication tokens if using JWT
-        response.setHeader("Authorization", ""); // Clear Bearer token (if stored in headers)
     }
 
 
@@ -333,6 +334,55 @@ public class UserController {
         } else {
             return Map.of("status", false, "message", "User not found.");
         }
+
+
+    }
+
+    @PutMapping("/set-mpin")
+    public ResponseEntity<?> setMpin(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String mpin = request.get("mpin");
+
+        if (email == null || email.isEmpty() || mpin == null || mpin.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Email and MPIN are required"
+            ));
+        }
+
+        return dataOperations.setUserMpin(email, mpin);
+    }
+
+
+    @PutMapping("/update-mpin")
+    public ResponseEntity<?> updateMpin(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String oldMpin = request.get("oldMpin");
+        String newMpin = request.get("newMpin");
+
+        if (email == null || oldMpin == null || newMpin == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Email, old MPIN, and new MPIN are required"
+            ));
+        }
+
+        return dataOperations.updateUserMpin(email, oldMpin, newMpin);
+    }
+
+    @PostMapping("/verify-mpin")
+    public ResponseEntity<?> verifyMpin(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String mpin = request.get("mpin");
+
+        if (email == null || email.isEmpty() || mpin == null || mpin.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Email and MPIN are required"
+            ));
+        }
+
+        return dataOperations.verifyMpin(email, mpin);
     }
 
 }

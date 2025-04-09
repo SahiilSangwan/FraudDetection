@@ -32,19 +32,42 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         System.out.println("🔍 Incoming Request: " + requestURI);
 
         // ✅ Allow `/api/users` & `/api/users/login` without any token
-        if (requestURI.startsWith("/api/users") && (requestURI.equals("/api/users") || requestURI.equals("/api/users/login"))) {
+        if ((requestURI.equals("/api/users") ||
+                requestURI.equals("/api/users/login") ||
+                requestURI.equals("/api/admin/login") ||
+                requestURI.equals("/api/users/set-mpin") ||
+                requestURI.equals("/api/admin/register") ||
+                requestURI.equals("/api/users/logout")
+        )) {
             chain.doFilter(request, response);
             return;
         }
 
-        // ✅ For `/api/users/sendotp` & `/api/users/verifyotp` → Require `auth_token`
-        if ( requestURI.startsWith("/api/alert") || requestURI.startsWith("/api/users/sendotp") || requestURI.startsWith("/api/users/verifyotp") || requestURI.startsWith("/api/users/logout")) {
+        // ✅ For `/api/users/sendotp` → Require `auth_token`
+        if (requestURI.startsWith("/api/users/sendotp")) {
             if (!validateTokenFromCookie(request, "auth_token")) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "❌ Forbidden: Invalid auth_token");
                 return;
             }
         }
-        // ✅ For all other routes → Require `otp_token`
+
+        // ✅ For `/api/users/verifyotp` → Require `otp_token`
+        else if (requestURI.startsWith("/api/users/verifyotp")) {
+            if (!validateTokenFromCookie(request, "auth_token")) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "❌ Forbidden: Invalid otp_token");
+                return;
+            }
+        }
+
+        // ✅ For `/api/alert` and `/api/admin/.*` → Require `admin_token`
+        else if (requestURI.startsWith("/api/alert") || requestURI.matches("/api/admin/.*")) {
+            if (!validateTokenFromCookie(request, "admin_token")) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "❌ Forbidden: Invalid admin_token");
+                return;
+            }
+        }
+
+        // Default: Otherwise, require `otp_token` (For other paths not explicitly mentioned above)
         else {
             if (!validateTokenFromCookie(request, "otp_token")) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "❌ Forbidden: Invalid otp_token");

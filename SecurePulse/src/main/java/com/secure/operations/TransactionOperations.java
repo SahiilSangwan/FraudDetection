@@ -302,51 +302,112 @@ public class TransactionOperations {
         }
     }
 
+//    public Map<String, Object> getTransactionsByUserId(Integer userId) {
+//        System.out.println("🔹 Fetching transactions for User ID: " + userId);
+//
+//        List<Transaction> sentTransactions = transactionRepository.findBySenderId(userId);
+//        List<Transaction> receivedTransactions = transactionRepository.findByReceiverId(userId);
+//
+//
+//        List<TransactionSummary> allTransactions = new ArrayList<>();
+//
+//        // Process sent (debited) transactions
+//        for (Transaction txn : sentTransactions) {
+//            if(txn.getFlag()==Transaction.TransactionFlag.FAILED){
+//                continue;
+//            }
+//
+//            allTransactions.add(new TransactionSummary(
+//                    txn.getTransactionId(),
+//                    txn.getDescription(),
+//                    txn.getTimestamp(),
+//                    null,
+//                    txn.getAmountTransferred(),
+//                    txn.getCurrentBalanceSender()
+//            ));
+//        }
+//
+//        // Process received (credited) transactions
+//        for (Transaction txn : receivedTransactions) {
+//            if(txn.getFlag()==Transaction.TransactionFlag.FAILED){
+//                continue;
+//            }
+//            allTransactions.add(new TransactionSummary(
+//                    txn.getTransactionId(),
+//                    txn.getDescription(),
+//                    txn.getTimestamp(),
+//                    txn.getAmountTransferred(), // Credited amount
+//                    (null),
+//                    txn.getCurrentBalanceReceiver()// No debited amount
+//            ));
+//        }
+//
+//        // Sort transactions by timestamp (latest first)
+//        allTransactions = allTransactions.stream()
+//                .sorted(Comparator.comparing(TransactionSummary::getTimestamp).reversed())
+//                .collect(Collectors.toList());
+//
+//        // Prepare response
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("status", true);
+//        response.put("transactions", allTransactions);
+//
+//        return response;
+//    }
+
     public Map<String, Object> getTransactionsByUserId(Integer userId) {
-        System.out.println("🔹 Fetching transactions for User ID: " + userId);
+        try {
+            System.out.println("🔹 Fetching transactions for User ID: " + userId);
 
-        List<Transaction> sentTransactions = transactionRepository.findBySenderId(userId);
-        List<Transaction> receivedTransactions = transactionRepository.findByReceiverId(userId);
+            // Get all completed transactions
+            List<Transaction> sentTransactions = transactionRepository.findBySenderIdAndFlag(
+                    userId, Transaction.TransactionFlag.COMPLETED);
+            List<Transaction> receivedTransactions = transactionRepository.findByReceiverIdAndFlag(
+                    userId, Transaction.TransactionFlag.COMPLETED);
 
+            List<TransactionSummary> allTransactions = new ArrayList<>();
 
-        List<TransactionSummary> allTransactions = new ArrayList<>();
+            // Process sent (debited) transactions
+            for (Transaction txn : sentTransactions) {
+                allTransactions.add(new TransactionSummary(
+                        txn.getTransactionId(),
+                        txn.getDescription(),
+                        txn.getTimestamp(),
+                        null,
+                        txn.getAmountTransferred(),
+                        txn.getCurrentBalanceSender()
+                ));
+            }
 
-        // Process sent (debited) transactions
-        for (Transaction txn : sentTransactions) {
+            // Process received (credited) transactions
+            for (Transaction txn : receivedTransactions) {
+                allTransactions.add(new TransactionSummary(
+                        txn.getTransactionId(),
+                        txn.getDescription(),
+                        txn.getTimestamp(),
+                        txn.getAmountTransferred(),
+                        null,
+                        txn.getCurrentBalanceReceiver()
+                ));
+            }
 
-            allTransactions.add(new TransactionSummary(
-                    txn.getTransactionId(),
-                    txn.getDescription(),
-                    txn.getTimestamp(),
-                    null,
-                    txn.getAmountTransferred(),
-                    txn.getCurrentBalanceSender()
-            ));
+            // Sort transactions by timestamp (latest first)
+            allTransactions = allTransactions.stream()
+                    .sorted(Comparator.comparing(TransactionSummary::getTimestamp).reversed())
+                    .collect(Collectors.toList());
+
+            return Map.of(
+                    "status", true,
+                    "transactions", allTransactions
+            );
+
+        } catch (Exception e) {
+            System.out.println("❌ Error fetching transactions: " + e.getMessage());
+            return Map.of(
+                    "status", false,
+                    "message", "Failed to fetch transactions"
+            );
         }
-
-        // Process received (credited) transactions
-        for (Transaction txn : receivedTransactions) {
-            allTransactions.add(new TransactionSummary(
-                    txn.getTransactionId(),
-                    txn.getDescription(),
-                    txn.getTimestamp(),
-                    txn.getAmountTransferred(), // Credited amount
-                    (null),
-                    txn.getCurrentBalanceReceiver()// No debited amount
-            ));
-        }
-
-        // Sort transactions by timestamp (latest first)
-        allTransactions = allTransactions.stream()
-                .sorted(Comparator.comparing(TransactionSummary::getTimestamp).reversed())
-                .collect(Collectors.toList());
-
-        // Prepare response
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", true);
-        response.put("transactions", allTransactions);
-
-        return response;
     }
 }
 

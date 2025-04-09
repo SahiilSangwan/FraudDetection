@@ -61,6 +61,8 @@ const Verification = () => {
             localStorage.setItem('vToken',data.otp_token)
             setVToken(data.otp_token)
             toast.success("OTP verified successfully!");
+            const currentTime = new Date().getTime();
+            localStorage.setItem('lastTriggeredTime', currentTime);
             setTimeout(() => navigate("/user-dashboard"), 1000);
       }else{
         handleFailedAttempt();

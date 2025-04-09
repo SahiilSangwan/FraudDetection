@@ -12,7 +12,11 @@ public class BlockedUser {
     private int id; // Corresponding to the `id` column in the table
 
     @Column(name = "userEmail", nullable = false)
-    private String email; // The email field
+    private String email;
+
+    @Column(name="Reason", nullable = false)
+    private String reason; // Corresponds to the `reason` column in the table
+
 
     @Column(name = "bank_name", nullable = false)
     private String bankName; // Corresponds to the `bank_name` column in the table
@@ -31,7 +35,13 @@ public class BlockedUser {
         }
     }
 
-    // Getters and Setters
+    // Getters and Setters\
+    public String getReason() {
+        return reason;
+    }
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
 
     public int getId() {
         return id;

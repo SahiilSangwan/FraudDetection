@@ -1,6 +1,7 @@
 package com.secure.operations;
 import com.secure.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -9,6 +10,7 @@ import com.secure.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -85,5 +87,105 @@ public class UserOperations {
 
         return Optional.empty(); // User does not exist or bank mismatch
     }
+
+
+    public ResponseEntity<?> setUserMpin(String email, String mpin) {
+        if (mpin.length() != 6) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "MPIN must be 6 digits"
+            ));
+        }
+
+        Optional<User> userOpt = getUserByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setMpin(passwordEncoder.encode(mpin));
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "MPIN set successfully"
+            ));
+        }
+
+        return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "User not found"
+        ));
+    }
+
+    public ResponseEntity<?> updateUserMpin(String email, String oldMpin, String newMpin) {
+        if (newMpin.length() != 6) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "MPIN must be 6 digits"
+            ));
+        }
+
+        Optional<User> userOpt = getUserByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            if (user.getMpin() == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "MPIN not set. Please set MPIN first"
+                ));
+            }
+
+            if (!passwordEncoder.matches(oldMpin, user.getMpin())) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Old MPIN is incorrect"
+                ));
+            }
+
+            user.setMpin(passwordEncoder.encode(newMpin));
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "MPIN updated successfully"
+            ));
+        }
+
+        return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "User not found"
+        ));
+    }
+
+    public ResponseEntity<?> verifyMpin(String email, String mpin) {
+        Optional<User> userOptional = getUserByEmail(email);
+
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "success", false,
+                    "message", "User not found"
+            ));
+        }
+
+        User user = userOptional.get();
+        if (user.getMpin() == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "MPIN not set for this user"
+            ));
+        }
+
+        if (passwordEncoder.matches(mpin, user.getMpin())) {
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "MPIN verification successful"
+            ));
+        }
+
+        return ResponseEntity.status(401).body(Map.of(
+                "success", false,
+                "message", "Invalid MPIN"
+        ));
+    }
+
 }
 

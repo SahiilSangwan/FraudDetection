@@ -1,33 +1,66 @@
+
 package com.secure.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "admin")
+public class Admin {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer userId;
+    private Integer adminId;
 
     private String firstName;
     private String lastName;
     private String email;
-    private String phoneNumber;
-    private String address;
-    private String dateOfBirth;
     private String aadharCard;
     private String panCard;
-    private String password;
-    private String mpin;
-    private Boolean flag;
 
-    // Default Constructor
-    public User() {
+    @JsonIgnore
+    private String password;
+
+    @JsonIgnore
+    private String mpin;
+    private String Address;
+    private String dateOfBirth;
+    private String phoneNumber;
+    // Stored as encrypted string of integer digits
+
+
+    // Default constructor
+    public Admin() {
     }
 
     // Getters
-    public Integer getUserId() {
-        return userId;
+
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public Integer getAdminId() {
+        return adminId;
+    }
+
+    public String getAddress() {
+        return Address;
+    }
+
+    public void setAddress(String address) {
+        Address = address;
     }
 
     public String getFirstName() {
@@ -38,20 +71,9 @@ public class User {
         return lastName;
     }
 
+
     public String getEmail() {
         return email;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public String getDateOfBirth() {
-        return dateOfBirth;
     }
 
     public String getAadharCard() {
@@ -70,13 +92,9 @@ public class User {
         return mpin;
     }
 
-    public Boolean getFlag() {
-        return flag;
-    }
-
     // Setters
-    public void setUserId(Integer userId) {
-        this.userId = userId;
+    public void setAdminId(Integer adminId) {
+        this.adminId = adminId;
     }
 
     public void setFirstName(String firstName) {
@@ -89,18 +107,6 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public void setDateOfBirth(String dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
     }
 
     public void setAadharCard(String aadharCard) {
@@ -117,9 +123,5 @@ public class User {
 
     public void setMpin(String mpin) {
         this.mpin = mpin;
-    }
-
-    public void setFlag(Boolean flag) {
-        this.flag = flag;
     }
 }

@@ -4,16 +4,18 @@ import { AdminContext } from '../context/AdminContext'
 import { useNavigate } from 'react-router-dom'
 
 
+
 const navbar = () => {
 
-    // const {aToken,setAToken} = useContext(AdminContext)
+    const {aToken,setAToken,logoutuser } = useContext(AdminContext)
 
     const navigate = useNavigate()
 
     const logout = () => {
         navigate('/')
-        // aToken && setAToken('')
-        // aToken && localStorage.removeItem('aToken')
+        aToken && setAToken('')
+        aToken && localStorage.removeItem('aToken')
+        logoutuser();
     }
 
   return (
@@ -22,7 +24,7 @@ const navbar = () => {
             <img className='w-36 sm:w-40 cursor-pointer' src={assets.logo} alt='' />
             <p className='border px-2.5 py-0.5 rounded-full text-gray-600 border-gray-500'>Admin</p>
         </div>
-        <button onClick={logout} className='bg-primary text-white text-sm px-10 py-2 rounded-full'>Logout</button>
+        <button onClick={logout} className='bg-black text-white text-sm px-10 py-2 rounded-full'>Logout</button>
     </div>
   )
 }
