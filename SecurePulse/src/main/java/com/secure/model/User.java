@@ -2,6 +2,8 @@ package com.secure.model;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -20,6 +22,16 @@ public class User {
     private String password;
     private String mpin;
     private Boolean flag;
+    @Column(nullable = false)
+    private BigDecimal mpinAmount = new BigDecimal("2000.00");
+
+    public BigDecimal getMpinAmount() {
+        return mpinAmount;
+    }
+
+    public void setMpinAmount(BigDecimal mpinAmount) {
+        this.mpinAmount = mpinAmount;
+    }
 
     // Default Constructor
     public User() {

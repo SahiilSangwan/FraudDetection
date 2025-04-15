@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -357,17 +358,16 @@ public class UserController {
     @PutMapping("/update-mpin")
     public ResponseEntity<?> updateMpin(@RequestBody Map<String, String> request) {
         String email = request.get("email");
-        String oldMpin = request.get("oldMpin");
         String newMpin = request.get("newMpin");
 
-        if (email == null || oldMpin == null || newMpin == null) {
-            return ResponseEntity.badRequest().body(Map.of(
+        if (email == null || newMpin == null) {
+            return ResponseEntity.status(200).body(Map.of(
                     "success", false,
-                    "message", "Email, old MPIN, and new MPIN are required"
+                    "message", "Email or  new MPIN are required"
             ));
         }
 
-        return dataOperations.updateUserMpin(email, oldMpin, newMpin);
+        return dataOperations.updateUserMpin(email, newMpin);
     }
 
     @PostMapping("/verify-mpin")
@@ -376,7 +376,7 @@ public class UserController {
         String mpin = request.get("mpin");
 
         if (email == null || email.isEmpty() || mpin == null || mpin.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
+            return ResponseEntity.status(200).body(Map.of(
                     "success", false,
                     "message", "Email and MPIN are required"
             ));
@@ -384,6 +384,88 @@ public class UserController {
 
         return dataOperations.verifyMpin(email, mpin);
     }
+
+
+    @PutMapping("/update-mpin-amount")
+    public ResponseEntity<?> updateMpinAmount(@RequestBody Map<String, Object> request) {
+        try {
+            String email = (String) request.get("email");
+            BigDecimal mpinAmount = new BigDecimal(request.get("mpinAmount").toString());
+
+            if (email == null || email.isEmpty() || mpinAmount == null) {
+                return ResponseEntity.status(200).body(Map.of(
+                        "success", false,
+                        "message", "Email and MPIN amount are required"
+                ));
+            }
+
+            Optional<User> userOpt = dataOperations.getUserByEmail(email);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                user.setMpinAmount(mpinAmount);
+                User updatedUser = dataOperations.updateUser(user.getUserId(), user);
+
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "MPIN amount updated successfully",
+                        "mpinAmount", updatedUser.getMpinAmount()
+                ));
+            }
+
+            return ResponseEntity.status(200).body(Map.of(
+                    "success", false,
+                    "message", "User not found"
+            ));
+
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(200).body(Map.of(
+                    "success", false,
+                    "message", "Invalid MPIN amount format"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "Error updating MPIN amount"
+            ));
+        }
+    }
+
+    @PostMapping("/get-mpin-amount")
+    public int getMpin(@RequestBody Map<String, Object> request) {
+        String email= (String) request.get("email");
+        System.out.println(email);
+        Optional<User> userOpt = dataOperations.getUserByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            System.out.println("MPIN amount: " + user.getMpinAmount());
+            return user.getMpinAmount().intValue();
+        }
+        return 0;
+    }
+
+    @PostMapping("/verify-mpin-otp")
+    public ResponseEntity<?> verifyMpinOtp(@RequestBody Map<String, Object> request) {
+        String email = (String) request.get("email");
+        String otp = (String) request.get("otp");
+        String mpin = (String) request.get("mpin");
+
+        System.out.println("Email: " + email);
+        System.out.println("OTP: " + otp);
+        System.out.println("MPIN: " + mpin);
+
+        if(email == null || otp == null || mpin == null) {
+            return ResponseEntity.status(200).body(Map.of(
+                    "success", false,
+                    "message", "Email, OTP, and MPIN are required"
+            ));
+        }else{
+            return dataOperations.verifyMpinOtp(email, otp, mpin);
+        }
+    }
+
+
+
+
 
 }
 

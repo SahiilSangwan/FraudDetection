@@ -55,19 +55,21 @@ const Verification = () => {
     }
 
     try {
-      const {data} = await axios.post(backendUrl + '/users/verifyotp', { email, otp, purpose },{withCredentials: true});
 
-      if (data.otpVerified) {
-            localStorage.setItem('vToken',data.otp_token)
-            setVToken(data.otp_token)
-            toast.success("OTP verified successfully!");
-            const currentTime = new Date().getTime();
-            localStorage.setItem('lastTriggeredTime', currentTime);
-            setTimeout(() => navigate("/user-dashboard"), 1000);
-      }else{
-        handleFailedAttempt();
-        toast.error("Invalid OTP. Please try again.");
-      }
+      if(otpAttempt + 1  < 5){
+      const {data} = await axios.post(backendUrl + '/users/verifyotp', { email, otp, purpose },{withCredentials: true});
+ 
+          if (data.otpVerified) {
+                localStorage.setItem('vToken',data.otp_token)
+                setVToken(data.otp_token)
+                toast.success("OTP verified successfully!");
+                const currentTime = new Date().getTime();
+                localStorage.setItem('lastTriggeredTime', currentTime);
+                setTimeout(() => navigate("/user-dashboard"), 1000);
+          }else{
+            handleFailedAttempt();
+            toast.error("Invalid OTP. Please try again.");
+          }}
     } catch (error) {
       toast.error(error.response?.data?.error);
     }
@@ -79,7 +81,7 @@ const Verification = () => {
     if (otpAttempt + 1 >= 2 && otpAttempt + 1 < 4 ) {
       toast.warning("You have made 2 or more incorrect attempts."); 
       sendWarning(pur);
-    } else if (otpAttempt + 1 > 3) {
+    } else if (otpAttempt + 1 > 3 && otpAttempt + 1 < 5) {
       toast.error("You have made too many incorrect attempts. Please try again later.");
       const reason="Multiple wrong OTP Attempts during login";
       blockUser(reason);

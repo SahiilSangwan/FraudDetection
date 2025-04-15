@@ -41,7 +41,7 @@ const Transactions = () => {
 
   useEffect(() => {
     fetchBeneficiaries();
-  }, [fetchBeneficiaries]);
+  }, [bankType]);
 
   const handlePay = () => {
     if (!selectedBeneficiary || !amount) {

@@ -37,7 +37,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 requestURI.equals("/api/admin/login") ||
                 requestURI.equals("/api/users/set-mpin") ||
                 requestURI.equals("/api/admin/register") ||
-                requestURI.equals("/api/users/logout")
+                requestURI.equals("/api/users/logout") ||
+                requestURI.startsWith("/api/alert")
         )) {
             chain.doFilter(request, response);
             return;
@@ -60,7 +61,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         // ✅ For `/api/alert` and `/api/admin/.*` → Require `admin_token`
-        else if (requestURI.startsWith("/api/alert") || requestURI.matches("/api/admin/.*")) {
+        else if (requestURI.matches("/api/admin/.*")) {
             if (!validateTokenFromCookie(request, "admin_token")) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "❌ Forbidden: Invalid admin_token");
                 return;

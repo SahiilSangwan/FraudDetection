@@ -1,5 +1,6 @@
 package com.secure.operations;
 import com.secure.repository.AccountRepository;
+import com.secure.services.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,6 +25,8 @@ public class UserOperations {
     private AccountRepository accountRepository;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private OtpService otpService;
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -115,7 +118,7 @@ public class UserOperations {
         ));
     }
 
-    public ResponseEntity<?> updateUserMpin(String email, String oldMpin, String newMpin) {
+    public ResponseEntity<?> updateUserMpin(String email,  String newMpin) {
         if (newMpin.length() != 6) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -134,12 +137,12 @@ public class UserOperations {
                 ));
             }
 
-            if (!passwordEncoder.matches(oldMpin, user.getMpin())) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Old MPIN is incorrect"
-                ));
-            }
+//            if (!passwordEncoder.matches(oldMpin, user.getMpin())) {
+//                return ResponseEntity.badRequest().body(Map.of(
+//                        "success", false,
+//                        "message", "Old MPIN is incorrect"
+//                ));
+//            }
 
             user.setMpin(passwordEncoder.encode(newMpin));
             userRepository.save(user);
@@ -177,15 +180,42 @@ public class UserOperations {
         if (passwordEncoder.matches(mpin, user.getMpin())) {
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "MPIN verification successful"
+                    "message", "Verification successful"
             ));
         }
 
-        return ResponseEntity.status(401).body(Map.of(
+        return ResponseEntity.status(200).body(Map.of(
                 "success", false,
                 "message", "Invalid MPIN"
         ));
     }
+
+    public ResponseEntity<?> verifyMpinOtp(String email, String otp, String mpin) {
+
+            ResponseEntity<?> response = verifyMpin(email, mpin);
+            Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+
+            if (responseBody != null && !(boolean) responseBody.get("success")) {
+                return ResponseEntity.status(200).body(Map.of(
+                        "success", false,
+                        "message", "Invalid MPIN"
+                ));
+            } else {
+                boolean isValidOtp = otpService.validateOtp(email, otp);
+                if (!isValidOtp) {
+                    return ResponseEntity.status(200).body(Map.of(
+                            "success", false,
+                            "message", "Invalid OTP"
+                    ));
+                }
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Verification successful"
+                ));
+            }
+
+    }
+
 
 }
 
