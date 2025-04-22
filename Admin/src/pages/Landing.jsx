@@ -20,7 +20,7 @@ const Landing = () => {
           className="absolute inset-0 w-full h-full object-cover"
           poster="https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop"
         >
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-data-stream-1318-large.mp4" type="video/mp4" />
+          <source src="#" type="video/mp4" />
         </video>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-24 sm:px-6 lg:px-8 text-center">

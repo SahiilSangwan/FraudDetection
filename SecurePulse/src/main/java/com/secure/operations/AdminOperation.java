@@ -7,6 +7,7 @@ import com.secure.model.*;
 import com.secure.repository.*;
 import com.secure.services.JwtService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +43,9 @@ public class AdminOperation {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private TransactionOperations transactionOperations;
 
     @Autowired
     private UserRepository userRepository;
@@ -695,14 +699,35 @@ public class AdminOperation {
         }
     }
 
+    @Transactional
     public boolean markTransactionAsNormal(Integer transactionId) {
         Optional<Transaction> txnOpt = transactionRepository.findById(transactionId);
         if (txnOpt.isPresent()) {
             Transaction txn = txnOpt.get();
-            if (txn.getMarked() == Transaction.TransactionMarked.SUSPICIOUS) {
-                txn.setFlag(Transaction.TransactionFlag.COMPLETED);
-                txn.setMarked(Transaction.TransactionMarked.NORMAL);
-                transactionRepository.save(txn);
+            Account sender = accountRepository.findByAccountNumber(txn.getSenderAccountNumber()).orElse(null);
+            Account receiver = accountRepository.findByAccountNumber(txn.getReceiverAccountNumber()).orElse(null);
+
+            if (sender == null || receiver == null) {
+                return false;
+            }
+
+            Map<String, Object> isDone = transactionOperations.processTransaction(
+                    sender,
+                    receiver,
+                    txn.getAmountTransferred(),
+                    txn.getSenderId(),
+                    txn.getReceiverId(),
+                    txn.getDescription()
+            );
+
+            if (isDone != null && Boolean.TRUE.equals(isDone.get("status"))) {
+                transactionRepository.delete(txn);
+                try{
+                    Thread.sleep(2000);
+                }catch(InterruptedException e){
+                    e.printStackTrace();
+                }
+
                 return true;
             }
         }

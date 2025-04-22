@@ -14,7 +14,7 @@ const Verification = () => {
   const email = storedUser?.email || "";
 
   const [purpose, setPurpose] = useState("login");
-  const {setVToken, backendUrl,getBankTheme, sendWarning, blockUser} = useContext(UserContext);
+  const {setVToken, backendUrl,getBankTheme, sendWarning, blockUser, encryption} = useContext(UserContext);
 
   // Bank logos mapping
   const bankLogos = {
@@ -57,7 +57,9 @@ const Verification = () => {
     try {
 
       if(otpAttempt + 1  < 5){
-      const {data} = await axios.post(backendUrl + '/users/verifyotp', { email, otp, purpose },{withCredentials: true});
+      const encryptedOtp = encryption(otp);
+      const encryptedEmail = encryption(email);
+      const {data} = await axios.post(backendUrl + '/users/verifyotp', { encryptedEmail, encryptedOtp, purpose },{withCredentials: true});
  
           if (data.otpVerified) {
                 localStorage.setItem('vToken',data.otp_token)

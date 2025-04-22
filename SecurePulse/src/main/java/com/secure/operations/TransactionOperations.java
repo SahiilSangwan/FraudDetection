@@ -36,7 +36,7 @@ public class TransactionOperations {
 
     @Transactional
     public Map<String, Object> addTransaction(Integer senderId, Integer beneficiaryId, String receiverAccountNumber,
-                                              BigDecimal amountTransferred, String ifscCode, String userBank, String description) {
+                                              BigDecimal amountTransferred, String ifscCode, String userBank, String description,Integer otpAttempt) {
         try {
             System.out.println("🔹 Starting Transaction Process...");
 
@@ -63,6 +63,26 @@ public class TransactionOperations {
             if (receiverAccount == null) {
                 System.out.println("❌ Receiver account not found.");
                 return Map.of("status", false, "message", "Receiver account not found");
+            }
+
+            System.out.println(otpAttempt);
+            if(otpAttempt >=3){
+                Transaction transaction = new Transaction();
+                transaction.setSenderId(senderId);
+                transaction.setReceiverId(receiverAccount.getUserId());
+                transaction.setSenderAccountNumber(senderAccount.getAccountNumber());
+                transaction.setReceiverAccountNumber(receiverAccount.getAccountNumber());
+                transaction.setAmountTransferred(amountTransferred);
+                transaction.setDescription(description +"\n" +"Multiple incorrect otp attempts");
+                transaction.setFlag(Transaction.TransactionFlag.PENDING);
+                transaction.setOtpAttempt(otpAttempt);
+                transaction.setMarked(Transaction.TransactionMarked.SUSPICIOUS);
+                transaction.setCurrentBalanceSender(senderAccount.getBalance());
+                transaction.setCurrentBalanceReceiver(receiverAccount.getBalance());
+                transactionRepository.save(transaction);
+
+                return Map.of("status", true, "message", "Transaction suspicious: Multiple incorrect OTP attempts");
+
             }
 
             // Process transaction
@@ -116,6 +136,7 @@ public class TransactionOperations {
     public Map<String, Object> processTransaction(Account sender, Account receiver, BigDecimal amount,
                                                   Integer senderId, Integer receiverId, String description) {
         System.out.println("🔹 Processing Transaction...");
+
 
         Object senderLock = accountLocks.computeIfAbsent(sender.getAccountNumber(), key -> new Object());
         Object receiverLock = accountLocks.computeIfAbsent(receiver.getAccountNumber(), key -> new Object());

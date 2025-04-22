@@ -36,11 +36,11 @@ const App = () => {
   };
 
 
-  // AntiInspect();
+  AntiInspect();
 
   return uToken && vToken ? (
     <>
-      {/* <BlockRightClick /> */}
+      <BlockRightClick />
       <ToastContainer />
       <Routes>
         <Route path="/" element={<UserDashboard />} />
@@ -54,7 +54,7 @@ const App = () => {
     </>
   ) : uToken ? (
     <>
-      {/* <BlockRightClick /> */}
+      <BlockRightClick />
       <ToastContainer />
       <Routes>
         <Route path="/verification" element={<Verification />} />
@@ -62,7 +62,7 @@ const App = () => {
     </>
   ) : (
     <>
-      {/* <BlockRightClick /> */}
+      <BlockRightClick />
       <ToastContainer />
       <Routes>
         <Route path="/" element={<Home />} />

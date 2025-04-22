@@ -22,13 +22,13 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [captcha, setCaptcha] = useState('');
   const [generatedCaptcha, setGeneratedCaptcha] = useState('');
-  const {setUToken, backendUrl,getBankTheme} = useContext(UserContext);
+  const {setUToken, backendUrl, getBankTheme, encryption} = useContext(UserContext);
 
   const canvasRef = useRef(null);
 
   // Generate CAPTCHA
   const generateCaptcha = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    const chars = 'abcdefghijkmnopqrstuvwxyz23456789';
     let captchaText = '';
     for (let i = 0; i < 5; i++) {
       captchaText += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -79,8 +79,12 @@ const Login = () => {
           toast.error('CAPTCHA is incorrect.');
           return;
         }
-
-        const {data} = await axios.post(backendUrl + `/users/login?bank=${bank}`, {email,password},{withCredentials:true})
+        // Encrypt email and password
+        const encryptedEmail = encryption(email); 
+        const encryptedPassword = encryption(password);
+        console.log("email : "+encryptedEmail)
+        console.log("password : "+encryptedPassword)
+        const {data} = await axios.post(backendUrl + `/users/login?bank=${bank}`, {encryptedEmail,encryptedPassword},{withCredentials:true})
         if(data.status){
             navigate("/verification");
             localStorage.setItem('uToken',data.utoken)

@@ -2,6 +2,7 @@ package com.secure.controller;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.secure.operations.TransactionOperations;
+import com.secure.services.Decryption;
 import com.secure.services.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +19,18 @@ public class TransactionController {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private Decryption Decrypt;
+
     @PostMapping("/add")
     public Map<String, Object> addTransaction(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
         // Extract data from request body
         System.out.println("controller request body"+requestBody);
-        Integer receiverId = (Integer) requestBody.get("selectedBeneficiaryID");
-        String receiverAccountNumber = (String) requestBody.get("receiverAcc");
-        BigDecimal amountTransferred = new BigDecimal(requestBody.get("amount").toString());
-        String ifscCode = (String) requestBody.get("ifscCodeUser");
+        Integer receiverId = Integer.parseInt(Decrypt.decryptString(requestBody.get("eSelectedBeneficiaryID").toString()));
+        String receiverAccountNumber =Decrypt.decryptString( (String) requestBody.get("eReceiverAcc"));
+        BigDecimal amountTransferred = new BigDecimal(Decrypt.decryptString(requestBody.get("eAmount").toString()));
+        String ifscCode =Decrypt.decryptString( (String) requestBody.get("eIfscCodeUser"));
+        Integer otpAttempt= (Integer) requestBody.get("totpAttempt");
         String desc=(String) requestBody.get("description");
         System.out.println("ifsc code at controller side of transaction"+ifscCode);
         System.out.println("description at controller side of transaction"+desc);
@@ -36,11 +41,12 @@ public class TransactionController {
         if (decodedJWT == null) {
             return Map.of("status", false, "message", "Invalid JWT Token");
         }
+        System.out.println(otpAttempt);
         Integer senderId = decodedJWT.getClaim("userId").asInt();
         String userBank = decodedJWT.getClaim("userBank").asString();
 
         // Call the function in TransactionOperations
-        return transactionOperations.addTransaction(senderId, receiverId, receiverAccountNumber, amountTransferred, ifscCode,userBank,desc);
+        return transactionOperations.addTransaction(senderId, receiverId, receiverAccountNumber, amountTransferred, ifscCode,userBank,desc,otpAttempt);
     }
 
     @GetMapping("/get/{userId}")

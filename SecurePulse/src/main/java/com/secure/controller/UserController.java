@@ -4,6 +4,7 @@ package com.secure.controller;
 
 import com.secure.model.BlockedUser;
 import com.secure.repository.BlockedUserRepository;
+import com.secure.services.Decryption;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +40,9 @@ public class UserController {
 
     @Autowired
     private UserOperations dataOperations;
+
+    @Autowired
+    private Decryption Decrpt;
 
     @Autowired
     private OtpService otpService;
@@ -94,8 +98,8 @@ public class UserController {
 
     @PostMapping("/login")
     public Map<String, Object> loginUser(@RequestBody Map<String, String> loginRequest,@RequestParam String bank ,HttpServletResponse response) {
-        String email = loginRequest.get("email");
-        String password = loginRequest.get("password");
+        String email =  Decrpt.decryptString(loginRequest.get("encryptedEmail"));
+        String password = Decrpt.decryptString(loginRequest.get("encryptedPassword"));
 
         Optional<User> userOptional = dataOperations.getUserByEmailAndPassword(email, password,bank);
 
@@ -216,8 +220,8 @@ public class UserController {
 
     @PostMapping("/verifyotp")
     public Map<String, Object> verifyOtp(@RequestBody Map<String, String> request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        String email = request.get("email");
-        String otp = request.get("otp");
+        String email = Decrpt.decryptString(request.get("encryptedEmail"));
+        String otp = Decrpt.decryptString(request.get("encryptedOtp"));
         String purpose = request.get("purpose"); // Extracting purpose
 
         System.out.println("Received Request: " + request);
@@ -372,8 +376,8 @@ public class UserController {
 
     @PostMapping("/verify-mpin")
     public ResponseEntity<?> verifyMpin(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String mpin = request.get("mpin");
+        String email =Decrpt.decryptString(request.get("eEmail"));
+        String mpin =Decrpt.decryptString(request.get("eMpin"));
 
         if (email == null || email.isEmpty() || mpin == null || mpin.isEmpty()) {
             return ResponseEntity.status(200).body(Map.of(
@@ -445,9 +449,9 @@ public class UserController {
 
     @PostMapping("/verify-mpin-otp")
     public ResponseEntity<?> verifyMpinOtp(@RequestBody Map<String, Object> request) {
-        String email = (String) request.get("email");
-        String otp = (String) request.get("otp");
-        String mpin = (String) request.get("mpin");
+        String email = Decrpt.decryptString((String) request.get("eEmail"));
+        String otp = Decrpt.decryptString((String) request.get("eOtp"));
+        String mpin =Decrpt.decryptString((String) request.get("eMpin"));
 
         System.out.println("Email: " + email);
         System.out.println("OTP: " + otp);

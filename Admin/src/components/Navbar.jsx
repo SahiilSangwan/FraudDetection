@@ -15,6 +15,8 @@ const navbar = () => {
         navigate('/')
         aToken && setAToken('')
         aToken && localStorage.removeItem('aToken')
+        localStorage.removeItem('email')
+        localStorage.removeItem('id')
         logoutuser();
     }
 

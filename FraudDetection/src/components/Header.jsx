@@ -27,6 +27,10 @@ const Header = () => {
     vToken && setVToken('')
     vToken && localStorage.removeItem('vToken')
     localStorage.removeItem('user')
+    localStorage.removeItem('lastTriggeredTime')
+    localStorage.removeItem('bank')
+    localStorage.removeItem('email')
+    localStorage.removeItem('id')
     logoutuser()
 }
 

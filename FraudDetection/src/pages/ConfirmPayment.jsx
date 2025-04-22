@@ -135,7 +135,7 @@ const ConfirmPayment = () => {
 
   const handlePinOtpSubmit = async () => {
     if (pin.length !== 6) {
-      toast.error("MPIN must be 4 digits");
+      toast.error("MPIN must be 6 digits");
       return;
     }
     if (otp.length !== 6) {
@@ -148,8 +148,6 @@ const ConfirmPayment = () => {
       const isVerified = await verifyMpinOtp(pin, otp, selectedBeneficiaryID, receiverAcc, amount, ifscCodeUser, description);
       if (isVerified) {
         proceedWithPayment();
-      } else {
-        toast.error("Invalid MPIN or OTP. Please try again.");
       }
     } catch (error) {
       toast.error("Error verifying OTP");
@@ -161,8 +159,8 @@ const ConfirmPayment = () => {
   };
 
   const proceedWithPayment = () => {
-    // In a real app, you would call your payment API here
-    toast.success("Payment processed successfully!");
+    
+    // toast.success("Payment processed");
     navigate('/user-dashboard');
   };
 

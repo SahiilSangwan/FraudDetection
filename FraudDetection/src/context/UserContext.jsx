@@ -80,6 +80,7 @@ const UserContextProvider = (props) => {
 
         try{
             const { data } = await axios.post(backendUrl+"/users/logout",{}, { withCredentials: true });
+            localStorage.removeItem('lastTriggeredTime')
         }catch (error) {
             toast.error(error.message)
         }
@@ -297,64 +298,6 @@ const UserContextProvider = (props) => {
           }
     }
 
-    const [totpAttempt, setTOtpAttempt] = useState(0); 
-
-    // const handleTFailedAttempt = () => {
-    // setTOtpAttempt(prev => prev + 1);
-    // const pur = "transaction";
-    // if (totpAttempt + 1 >= 2 && totpAttempt + 1 <= 3 ) {
-    //     toast.warning("You have made 2 or more incorrect attempts."); 
-    //     sendWarning(pur);
-    // } else if (totpAttempt + 1 > 3) {
-    //     toast.error("You have made too many incorrect attempts.");
-    //     setTOtpAttempt(0);
-    //     const reason="Multiple wrong OTP attempts during transaction";
-    //     blockUser(reason);
-    // }
-    // };
-
-    const handleTFailedAttempt = async () => {
-        // Calculate new attempt count using functional update
-        setTOtpAttempt(prevAttempts => {
-            const newAttempts = prevAttempts + 1;
-            
-            // Handle security measures based on attempt count
-            const handleSecurityResponse = async () => {
-                const purpose = "transaction";
-                
-                if (newAttempts === 2) {
-                    toast.warning("You've entered incorrect credentials twice. One more attempt will trigger security measures.");
-                } 
-                else if (newAttempts === 3) {
-                    toast.warning("Final attempt! Account will be locked after one more failed try.");
-                    await sendWarning(purpose);
-                } 
-                else if (newAttempts >= 4) {
-                    toast.error("Account locked due to multiple failed attempts. Contact support.");
-                    const reason = "Exceeded maximum OTP attempts (4)";
-                    await blockUser(reason);
-                    
-                    setTimeout(() => {
-                        navigate("/", { 
-                            state: { lockReason: reason },
-                            replace: true 
-                        });
-                    }, 2000);
-                    return 0; // Reset counter after lock
-                }
-                return newAttempts;
-            };
-    
-            // Execute security measures
-            handleSecurityResponse().catch(error => {
-                console.error("Security handler error:", error);
-                toast.error("Security system error. Please contact support.");
-            });
-    
-            return newAttempts;
-        });
-    };
-
 
     const getBankTheme = (bank) => {
         const themes = {
@@ -499,36 +442,48 @@ const UserContextProvider = (props) => {
     };
 
 
-
     const verifyMpinOtp = async (mpin, otp, selectedBeneficiaryID, receiverAcc, amount, ifscCodeUser, description) => {
+        const eMpin = encryption(mpin);
+        const eOtp = encryption(otp);
+        const eEmail = encryption(email);
+        const eSelectedBeneficiaryID = encryption(selectedBeneficiaryID.toString());
+        const eReceiverAcc = encryption(receiverAcc);
+        const eAmount = encryption(amount.toString());
+        const eIfscCodeUser = encryption(ifscCodeUser);
+        console.log("Encrypted values:", {
+            selectedBeneficiaryID: eSelectedBeneficiaryID,
+            receiverAccount: eReceiverAcc,
+            amount: eAmount,
+            ifscCode: eIfscCodeUser,
+            mpin: eMpin,
+            otp: eOtp,
+            email: eEmail
+        });
+
         try {
             // First verify MPIN and OTP
             const { data } = await axios.post(
                 backendUrl + '/users/verify-mpin-otp', 
-                { email, otp, mpin }, 
+                { eEmail, eOtp, eMpin }, 
                 { withCredentials: true }
             );
-
-            console.log(data)
     
             if (!data.success) {
                 toast.error(data.message || "MPIN/OTP verification failed");
-                handleTFailedAttempt();
+                await handleTFailedAttempt(); // Make sure to await
                 return false;
             }
     
             toast.success("MPIN and OTP verified successfully!");
-    
-            // Process the transaction
-            // const { selectedBeneficiaryID, receiverAcc, amount, ifscCodeUser, description } = transactionData;
             
             const transactionResponse = await axios.post(
                 backendUrl + '/transaction/add',
                 {
-                    selectedBeneficiaryID: Number(selectedBeneficiaryID),
-                    receiverAcc,
-                    amount: Number(amount),
-                    ifscCodeUser,
+                    totpAttempt, // Current attempt count
+                    eSelectedBeneficiaryID,
+                    eReceiverAcc,
+                    eAmount,
+                    eIfscCodeUser,
                     description,
                     verificationMethod: 'mpin_otp',
                     verifiedAt: new Date().toISOString()
@@ -536,11 +491,24 @@ const UserContextProvider = (props) => {
                 { withCredentials: true }
             );
 
-            console.log(transactionResponse.data)
+            const count = totpAttempt;
+            setTOtpAttempt(prev => {
+                if (prev !== 0) {
+                    console.log("Resetting TOTP attempts from", prev, "to 0");
+                    return 0;
+                }
+                return prev;
+            });
+            
     
             if (!transactionResponse.data.status) {
                 toast.error(transactionResponse.data.message || "Transaction failed");
                 return false;
+            }
+
+            if(count == 3){
+                toast.warning("Transaction was marked as suspicious. Please verify.");
+                return true;
             }
     
             toast.success("Transaction completed successfully!");
@@ -554,13 +522,59 @@ const UserContextProvider = (props) => {
             return false;
         }
     };
+
+    const [totpAttempt, setTOtpAttempt] = useState(0);
+    
+    const handleTFailedAttempt = async () => {
+        // Use functional update and await the state change
+        await new Promise(resolve => {
+            setTOtpAttempt(prev => {
+                const newAttempts = prev + 1;
+                console.log("Incrementing attempts to", newAttempts);
+                
+                // Immediate security actions
+                if (newAttempts === 2) {
+                    toast.warning("You've entered incorrect credentials twice.");
+                } 
+                else if (newAttempts === 3) {
+                    toast.warning("Final attempt! Account will be locked after another failure.");
+                    sendWarning("transaction").catch(console.error);
+                } 
+                else if (newAttempts >= 4) {
+                    toast.error("Account locked due to multiple failed attempts.");
+                    blockUser("Exceeded maximum OTP attempts (4)").catch(console.error);
+                    setTimeout(() => navigate("/", { replace: true }), 2000);
+                    resolve(0); // Return 0 immediately for this case
+                    return 0;
+                }
+                
+                resolve(newAttempts);
+                return newAttempts;
+            });
+        });
+    };
     
     const verifyMpin = async (mpin, selectedBeneficiaryID, receiverAcc, amount, ifscCodeUser, description) => {
+        const eMpin = encryption(mpin);
+        const eEmail = encryption(email);
+        const eSelectedBeneficiaryID = encryption(selectedBeneficiaryID.toString());
+        const eReceiverAcc = encryption(receiverAcc);
+        const eAmount = encryption(amount.toString());
+        const eIfscCodeUser = encryption(ifscCodeUser);
+        console.log("Encrypted values:", {
+            selectedBeneficiaryID: eSelectedBeneficiaryID,
+            receiverAccount: eReceiverAcc,
+            amount: eAmount,
+            ifscCode: eIfscCodeUser,
+            mpin: eMpin,
+            email: eEmail
+        });
+
         try {
             // First verify MPIN
             const { data } = await axios.post(
                 backendUrl + '/users/verify-mpin', 
-                { email, mpin }, 
+                { eEmail, eMpin }, 
                 { withCredentials: true }
             );
 
@@ -573,17 +587,15 @@ const UserContextProvider = (props) => {
             }
     
             toast.success("MPIN verified successfully!");
-    
-            // Process the transaction
-            // const { selectedBeneficiaryID, receiverAcc, amount, ifscCodeUser, description } = transactionData;
-            
+
             const transactionResponse = await axios.post(
                 backendUrl + '/transaction/add',
                 {
-                    selectedBeneficiaryID: Number(selectedBeneficiaryID),
-                    receiverAcc,
-                    amount: Number(amount),
-                    ifscCodeUser,
+                    totpAttempt,
+                    eSelectedBeneficiaryID,
+                    eReceiverAcc,
+                    eAmount,
+                    eIfscCodeUser,
                     description,
                     verificationMethod: 'mpin_only',
                     verifiedAt: new Date().toISOString()
@@ -591,13 +603,26 @@ const UserContextProvider = (props) => {
                 { withCredentials: true }
             );
 
-            console.log(transactionResponse.data)
+            const count = totpAttempt;
+            // RESET ATTEMPTS - Use functional update to ensure correctness
+            setTOtpAttempt(prev => {
+                if (prev !== 0) {
+                    console.log("Resetting TOTP attempts from", prev, "to 0");
+                    return 0;
+                }
+                return prev;
+            });
+            
     
             if (!transactionResponse.data.status) {
                 toast.error(transactionResponse.data.message || "Transaction failed");
                 return false;
             }
-    
+        
+            if(count == 3){
+                toast.warning("Transaction was marked as suspicious. Please verify.");
+                return true;
+            }
             toast.success("Transaction completed successfully!");
             return true;
     
@@ -609,6 +634,32 @@ const UserContextProvider = (props) => {
             return false;
         }
     };
+
+
+    function encryption(input) {
+        
+        if (!input || typeof input !== "string" || input.trim() === "") {
+            throw new Error("Input must be a non-empty string.");
+        }
+
+        let encrypted = input;
+
+        for (let round = 1; round <= 3; round++) {
+            // Step 1: Shift each character by its index + 1
+            let shifted = '';
+            for (let i = 0; i < encrypted.length; i++) {
+                let charCode = encrypted.charCodeAt(i);
+                charCode = (charCode + (i + 1)) % 65536; // Wrap around UTF-16 range
+                shifted += String.fromCharCode(charCode);
+            }
+            encrypted = shifted;
+            
+            // Step 2: Double the string
+            encrypted = encrypted + encrypted;
+        }
+
+        return encrypted;
+    }
 
 
     const value ={
@@ -636,7 +687,8 @@ const UserContextProvider = (props) => {
         sendTOTP,verifyTOTP,getBankTheme,
         sendWarning,blockUser,verifyPinOTP,
         verifyLimitOTP, mpinAmount,mpinLimitAmount,
-        setMpinLimitAmount,verifyMpin,verifyMpinOtp
+        setMpinLimitAmount,verifyMpin,verifyMpinOtp,
+        encryption,
     }
 
     return (
