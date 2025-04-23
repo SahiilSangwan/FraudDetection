@@ -60,7 +60,6 @@ const UserContextProvider = (props) => {
         }
     }
 
-
     const getUserAccount = async () =>{
 
         try{
@@ -132,7 +131,6 @@ const UserContextProvider = (props) => {
         }
     }
 
-
     const sendOTP = async () => {
         if (!newBeneficiary.accountNumber || !newBeneficiary.confirmAccount || !newBeneficiary.ifscCode || !newBeneficiary.amount || !newBeneficiary.name) {
             console.error("newBeneficiary is missing required fields:", newBeneficiary);
@@ -156,11 +154,12 @@ const UserContextProvider = (props) => {
         }
     };
 
-
     const verifyOTP = async (otp) =>{
+        const encryptedEmail = encryption(email); 
+        const encryptedOtp = encryption(otp);
         try {
             const purpose = "verification"
-            const {data} = await axios.post(backendUrl + '/users/verifyotp', { email, otp, purpose },{withCredentials: true});
+            const {data} = await axios.post(backendUrl + '/users/verifyotp', { encryptedEmail, encryptedOtp, purpose },{withCredentials: true});
       
             if (data.otpVerified) {
                   addBeneficiary();
@@ -195,7 +194,6 @@ const UserContextProvider = (props) => {
     }
     };
 
-
     const addBeneficiary = async () =>{
         try{
             const { data } = await axios.post(backendUrl+`/beneficiaries/add`,newBeneficiary,{ withCredentials: true });
@@ -210,7 +208,6 @@ const UserContextProvider = (props) => {
             toast.error(error.message)
         }
     }
-
 
     const getUserTransacionBeneficiaries = async (sameBank) =>{
         try{
@@ -240,7 +237,6 @@ const UserContextProvider = (props) => {
         }
     }
 
-
     const getTransacionsConfirmation = async (selectedBeneficiaryID) =>{
         try{
             const { data } = await axios.get(backendUrl+`/beneficiaries/compare/${selectedBeneficiaryID}`,{ withCredentials: true });
@@ -257,6 +253,7 @@ const UserContextProvider = (props) => {
 
     const sendTOTP = async () => {
             try {
+                
                 await axios.post(backendUrl + '/users/sendotp', { email }, { withCredentials: true });
                 toast.success(`OTP sent to ${email}. Check your inbox.`);
                 return true; 
@@ -266,38 +263,6 @@ const UserContextProvider = (props) => {
                 return false; 
             }
     };
-
-    const verifyTOTP = async (otp, selectedBeneficiaryID, receiverAcc, amount, ifscCodeUser, description) =>{
-
-        try {
-            const purpose = "verification"
-            const {data} = await axios.post(backendUrl + '/users/verifyotp', { email, otp, purpose },{withCredentials: true});
-      
-            if (data.otpVerified) {
-                //   addTransaction();
-                  toast.success("OTP verified successfully!");
-
-
-                        const { data } = await axios.post(backendUrl+`/transaction/add`,{selectedBeneficiaryID: Number(selectedBeneficiaryID), receiverAcc, amount: Number(amount), ifscCodeUser, description},{ withCredentials: true });
-                            if(data.status){
-                                console.log(data)
-                                toast.success(data.message)
-                                setTimeout(() => {
-                                    navigate("/user-dashboard");}, 2000); 
-                            }else{
-                                toast.error(data.message)
-                                handleTFailedAttempt();
-                            }
-
-
-            }else{
-              toast.error("Invalid OTP. Please try again.");
-            }
-          } catch (error) {
-            toast.error(error.response?.data?.error);
-          }
-    }
-
 
     const getBankTheme = (bank) => {
         const themes = {
@@ -329,18 +294,17 @@ const UserContextProvider = (props) => {
             border: "border-t-4 border-orange-600"
           }
         };
-        return themes[bank] || themes.sbi; // Default to SBI theme
+        return themes[bank] || themes.sbi; 
       };
 
-
       const sendWarning = async (purpose) => {
-        try {
-            const { data } = await axios.get(backendUrl + `/alert/warning/${purpose}`, { withCredentials: true });        
-            return true; 
-        } catch (error) {
-            return false; 
-        }
-    };
+            try {
+                const { data } = await axios.get(backendUrl + `/alert/warning/${purpose}`, { withCredentials: true });        
+                return true; 
+            } catch (error) {
+                return false; 
+            }
+        };
 
     const blockUser = async (reason) => {
         try {
@@ -361,8 +325,10 @@ const UserContextProvider = (props) => {
     const verifyPinOTP = async (otp, newMpin) => {
         try {
           const purpose = "pin change";
-          // First verify OTP
-          const otpResponse = await axios.post(backendUrl + '/users/verifyotp', { email, otp, purpose }, { withCredentials: true });
+         
+          const encryptedEmail = encryption(email);
+          const encryptedOtp = encryption(otp);
+          const otpResponse = await axios.post(backendUrl + '/users/verifyotp', { encryptedEmail, encryptedOtp, purpose }, { withCredentials: true });
       
           if (!otpResponse.data.otpVerified) {
             toast.error("Invalid OTP. Please try again.");
@@ -371,7 +337,6 @@ const UserContextProvider = (props) => {
       
           toast.success("OTP verified successfully!");
       
-          // Then update MPIN
           const updateResponse = await axios.put(backendUrl+`/users/update-mpin`,{email, newMpin},{ withCredentials: true });
       
           if (!updateResponse.data.success) {
@@ -393,11 +358,12 @@ const UserContextProvider = (props) => {
     const verifyLimitOTP = async (otp, mpinAmount) => {
         try {
           const purpose = "limit change";
-          
-          // First verify OTP
+
+          const encryptedEmail = encryption(email);
+          const encryptedOtp = encryption(otp);
           const otpResponse = await axios.post(
             backendUrl + '/users/verifyotp', 
-            { email, otp, purpose },
+            { encryptedEmail, encryptedOtp, purpose },
             { withCredentials: true }
           );
       
@@ -408,7 +374,6 @@ const UserContextProvider = (props) => {
       
           toast.success("OTP verified successfully!");
       
-          // Then update transaction limit
           const limitResponse = await axios.put(
             backendUrl + '/users/update-mpin-amount',
             { email, mpinAmount },
@@ -461,7 +426,7 @@ const UserContextProvider = (props) => {
         });
 
         try {
-            // First verify MPIN and OTP
+
             const { data } = await axios.post(
                 backendUrl + '/users/verify-mpin-otp', 
                 { eEmail, eOtp, eMpin }, 
@@ -500,7 +465,6 @@ const UserContextProvider = (props) => {
                 return prev;
             });
             
-    
             if (!transactionResponse.data.status) {
                 toast.error(transactionResponse.data.message || "Transaction failed");
                 return false;
@@ -526,13 +490,12 @@ const UserContextProvider = (props) => {
     const [totpAttempt, setTOtpAttempt] = useState(0);
     
     const handleTFailedAttempt = async () => {
-        // Use functional update and await the state change
+
         await new Promise(resolve => {
             setTOtpAttempt(prev => {
                 const newAttempts = prev + 1;
                 console.log("Incrementing attempts to", newAttempts);
                 
-                // Immediate security actions
                 if (newAttempts === 2) {
                     toast.warning("You've entered incorrect credentials twice.");
                 } 
@@ -544,7 +507,7 @@ const UserContextProvider = (props) => {
                     toast.error("Account locked due to multiple failed attempts.");
                     blockUser("Exceeded maximum OTP attempts (4)").catch(console.error);
                     setTimeout(() => navigate("/", { replace: true }), 2000);
-                    resolve(0); // Return 0 immediately for this case
+                    resolve(0); 
                     return 0;
                 }
                 
@@ -571,7 +534,6 @@ const UserContextProvider = (props) => {
         });
 
         try {
-            // First verify MPIN
             const { data } = await axios.post(
                 backendUrl + '/users/verify-mpin', 
                 { eEmail, eMpin }, 
@@ -604,7 +566,6 @@ const UserContextProvider = (props) => {
             );
 
             const count = totpAttempt;
-            // RESET ATTEMPTS - Use functional update to ensure correctness
             setTOtpAttempt(prev => {
                 if (prev !== 0) {
                     console.log("Resetting TOTP attempts from", prev, "to 0");
@@ -613,7 +574,6 @@ const UserContextProvider = (props) => {
                 return prev;
             });
             
-    
             if (!transactionResponse.data.status) {
                 toast.error(transactionResponse.data.message || "Transaction failed");
                 return false;
@@ -635,7 +595,6 @@ const UserContextProvider = (props) => {
         }
     };
 
-
     function encryption(input) {
         
         if (!input || typeof input !== "string" || input.trim() === "") {
@@ -645,22 +604,19 @@ const UserContextProvider = (props) => {
         let encrypted = input;
 
         for (let round = 1; round <= 3; round++) {
-            // Step 1: Shift each character by its index + 1
             let shifted = '';
             for (let i = 0; i < encrypted.length; i++) {
                 let charCode = encrypted.charCodeAt(i);
-                charCode = (charCode + (i + 1)) % 65536; // Wrap around UTF-16 range
+                charCode = (charCode + (i + 1)) % 65536; 
                 shifted += String.fromCharCode(charCode);
             }
             encrypted = shifted;
-            
-            // Step 2: Double the string
+
             encrypted = encrypted + encrypted;
         }
 
         return encrypted;
     }
-
 
     const value ={
         uToken,setUToken,
@@ -684,7 +640,7 @@ const UserContextProvider = (props) => {
         description, setDescription,
         selectedBeneficiaryID, setSelectedBeneficiaryID,
         getTransacionsConfirmation, confirmationData,
-        sendTOTP,verifyTOTP,getBankTheme,
+        sendTOTP,getBankTheme,
         sendWarning,blockUser,verifyPinOTP,
         verifyLimitOTP, mpinAmount,mpinLimitAmount,
         setMpinLimitAmount,verifyMpin,verifyMpinOtp,

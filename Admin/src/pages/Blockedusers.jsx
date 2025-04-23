@@ -6,16 +6,13 @@ import { FiLock, FiX, FiCheck } from 'react-icons/fi';
 const BlockedUsersPage = () => {
   const { getBlockedUsers, aBlockedUsers, verifyUnblockMpin } = useContext(AdminContext);
 
-  // State for filters
   const [searchTerm, setSearchTerm] = useState('');
   const [bankFilter, setBankFilter] = useState('all');
 
-  // Apply filters to aBlockedUsers directly
   const filteredUsers = aBlockedUsers?.filter(user => {
-    // Bank filter (adjusted to match bankName)
+
     const bankMatch = bankFilter === 'all' || user.bankName.toUpperCase() === bankFilter;
 
-    // Search term filter
     const searchMatch =
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.accountNumber?.includes(searchTerm) ||
@@ -47,7 +44,7 @@ const BlockedUsersPage = () => {
     verifyUnblockMpin(selectedUser.id, mpin)
     
     setShowUnblockModal(false);
-    // Refresh your blocked users list
+
     setTimeout(() => {
       getBlockedUsers();
     }, 1000);
@@ -164,7 +161,7 @@ const BlockedUsersPage = () => {
           </table>
         </div>
 
-        {/* MPIN Verification Modal */}
+        {/* MPIN Verification */}
         {showUnblockModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md">

@@ -27,7 +27,6 @@ const Profile = () => {
     setOtpSent(true);
   };
 
-
 const [isSettingLimit, setIsSettingLimit] = useState(false);
 
 const handleSetLimit = async (e) => {
@@ -73,7 +72,6 @@ const handleSetLimit = async (e) => {
     setIsSettingLimit(false);
   }
 };
-
 
 const [isChangingPin, setIsChangingPin] = useState(false);
 

@@ -9,8 +9,8 @@ const UpdatePinPage = () => {
 
   const {sendAOTP,backendUrl} = useContext(AdminContext)
   const navigate = useNavigate();
-  // State management
-  const [currentStep, setCurrentStep] = useState(1); // 1: Enter new PIN, 2: OTP verification, 3: Success
+
+  const [currentStep, setCurrentStep] = useState(1); 
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [otp, setOtp] = useState('');
@@ -18,12 +18,11 @@ const UpdatePinPage = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // PIN validation
+
   const validatePin = (pin) => {
-    return /^\d{4,6}$/.test(pin); // 4-6 digit PIN validation
+    return /^\d{4,6}$/.test(pin);
   };
 
-  // Handle PIN submission
   const handlePinSubmit = (e) => {
     e.preventDefault();
     setError('');
@@ -42,14 +41,13 @@ const UpdatePinPage = () => {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      setCurrentStep(2); // Move to OTP verification step
+      setCurrentStep(2);
     }, 1500);
   };
 
   const mpin = newPin;
   const email = localStorage.getItem('email')
 
-  // Handle OTP submission
   const handleOtpSubmit = (e) => {
     e.preventDefault();
     setError('');
@@ -60,12 +58,10 @@ const UpdatePinPage = () => {
     }
 
     verifyAOTP();
-
   };
 
 
     const verifyAOTP = async () =>{
-
       try {
         const purpose = "Admin"
         const {data} = await axios.post(backendUrl + '/api/admin/verifyotp', { email, otp, purpose },{withCredentials: true});
@@ -78,7 +74,7 @@ const UpdatePinPage = () => {
                           setTimeout(() => {
                             setIsLoading(false);
                             setSuccessMessage('PIN successfully updated!');
-                            setCurrentStep(3); // Move to success step
+                            setCurrentStep(3);
                           }, 1500);
                         }else{
                             toast.error("Failed to update PIN. Please try again.");
@@ -98,7 +94,6 @@ const UpdatePinPage = () => {
     setTimeout(() => {
       setIsLoading(false);
       setError('');
-      // In a real app, you would show a success message here
     }, 1000);
   };
 
@@ -119,7 +114,7 @@ const UpdatePinPage = () => {
         <div className="flex-1 md:ml-64 min-h-screen bg-gray-50 p-4 md:p-8">
           {/* Expanded Card Container */}
           <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl mx-auto overflow-hidden border border-gray-200">
-            {/* Header with gradient background */}
+            
             <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 p-6 md:p-8">
               <h1 className="text-2xl md:text-3xl font-bold text-white text-center">
                 {currentStep === 1 && 'Update Your Security PIN'}
@@ -154,7 +149,7 @@ const UpdatePinPage = () => {
               </div>
             </div>
 
-            {/* Content Area - Expanded */}
+            {/* Content Area*/}
             <div className="p-6 md:p-8">
               {error && (
                 <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100 flex items-center">
@@ -170,7 +165,7 @@ const UpdatePinPage = () => {
                 </div>
               )}
 
-              {/* Step 1: Enter New PIN - Enhanced */}
+              {/* Step 1: Enter New PIN*/}
               {currentStep === 1 && (
                 <form onSubmit={handlePinSubmit} className="space-y-6 max-w-lg mx-auto">
                   <div>
@@ -240,7 +235,7 @@ const UpdatePinPage = () => {
                 </form>
               )}
 
-              {/* Step 2: OTP Verification - Enhanced */}
+              {/* Step 2: OTP Verification*/}
               {currentStep === 2 && (
                 <form onSubmit={handleOtpSubmit} className="max-w-lg mx-auto">
                   <div className="text-center mb-8">
@@ -305,7 +300,7 @@ const UpdatePinPage = () => {
                 </form>
               )}
 
-              {/* Step 3: Success - Enhanced */}
+              {/* Step 3: Success*/}
               {currentStep === 3 && (
                 <div className="text-center py-8 max-w-lg mx-auto">
                   <div className="bg-green-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">

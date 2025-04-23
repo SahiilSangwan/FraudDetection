@@ -7,19 +7,13 @@ const BeneficiaryManager = () => {
     const {beneficiaries, getUserBeneficiaries, deleteBeneficiaries,handleUpdateBeneficiary, sendOTP,
         verifyOTP, setNewBeneficiary, newBeneficiary } = useContext(UserContext);
 
-
-    // Popup states
     const [showAddPopup, setShowAddPopup] = useState(false);
-    const [selectedBeneficiary, setSelectedBeneficiary] = useState(0);
-    
+    const [selectedBeneficiary, setSelectedBeneficiary] = useState(0);   
     const [otp, setOtp] = useState("");
     const [otpSent, setOtpSent] = useState(false);
     const [resendTimer, setResendTimer] = useState(30);
-
     const [isUpdateOpen, setIsUpdateOpen] = useState(false);
     const [amount, setAmount] = useState("");
-
-
 
     // Timer for OTP Resend
     useEffect(() => {
@@ -33,7 +27,6 @@ const BeneficiaryManager = () => {
     // Handle checkbox toggle
     const handleBankChange = (type) => setBankType(type);
 
-
     // Open Edit Popup
     const handleEdit = (beneficiary) => {
         setIsUpdateOpen(true);
@@ -44,7 +37,6 @@ const BeneficiaryManager = () => {
     const handleAddBeneficiary = () => {
         setShowAddPopup(true);
     };
-
 
     // Send OTP
     const handleSendOtp = async () => {

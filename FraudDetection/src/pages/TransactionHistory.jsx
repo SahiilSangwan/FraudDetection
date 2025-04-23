@@ -4,25 +4,22 @@ import Footer from "../components/Footer";
 import { UserContext } from "../context/UserContext";
 
 const TransactionHistory = () => {
-  const [filterType, setFilterType] = useState("month"); // "month" or "date"
+  const [filterType, setFilterType] = useState("month");
   const [selectedValue, setSelectedValue] = useState("");
-
   const {transactions, getUserTransacions} = useContext(UserContext);
 
-  // Fetch transactions on component mount
   useEffect(() => {
     getUserTransacions();
   }, []);
 
-  // Ensure transactions is an array before filtering
   const filteredTransactions = (transactions?.transactions || []).filter((txn) => {
     const txnDate = new Date(txn.timestamp);
     if (filterType === "month" && selectedValue) {
-      return txnDate.getMonth() + 1 === parseInt(selectedValue); // Month filter
+      return txnDate.getMonth() + 1 === parseInt(selectedValue);
     } else if (filterType === "date" && selectedValue) {
-      return txnDate.toISOString().split("T")[0] === selectedValue; // Date filter
+      return txnDate.toISOString().split("T")[0] === selectedValue; 
     }
-    return true; // Show all transactions if no filter
+    return true;
   });
 
   return (

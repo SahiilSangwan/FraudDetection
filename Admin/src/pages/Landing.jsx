@@ -1,11 +1,7 @@
-import { useEffect } from 'react';
+import React from 'react';
 import { FiActivity, FiShield, FiAlertTriangle, FiTrendingUp, FiBarChart2 } from 'react-icons/fi';
 
 const Landing = () => {
-  useEffect(() => {
-    // This would be where you'd initialize any animations in a real implementation
-    console.log("Secure Pulse Admin Panel loaded");
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">

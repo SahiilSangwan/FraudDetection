@@ -2,32 +2,28 @@ import React, { useContext, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { assets } from "../assets/assets"; // Import bank logos
+import { assets } from "../assets/assets";
 import { UserContext } from "../context/UserContext";
 
 const Dashboard = () => {
   const bank =localStorage.getItem('bank') || "default";
 
-  // Bank logos mapping
   const bankLogos = {
     sbi: assets?.sbi,
     hdfc: assets?.hdfc,
     icici: assets?.icici,
   };
 
-  
   const {account, getUserAccount, transactions, getUserTransacions, getBankTheme} = useContext(UserContext);
-  
+
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const username = storedUser?.name || "";
-
   const accountHolder = username;
   const accNumber = String(account.accountNumber);
   const balance = account.balance;
   const [showBalance, setShowBalance] = useState(false);
   const [showTransactions, setShowTransactions] = useState(false);
   const [hoverAccNo, setHoverAccNo] = useState(false);
-
 
     useEffect(()=>{
         getUserAccount()
@@ -43,7 +39,7 @@ const Dashboard = () => {
         {/* Main Content */}
         <main className="flex-grow flex justify-center items-center p-4">
           <div className={`max-w-4xl w-full bg-white rounded-xl shadow-xl overflow-hidden ${getBankTheme(bank).border}`}>
-            {/* Bank Header with Gradient */}
+            {/* Bank Header */}
             <div className={`${getBankTheme(bank).header} p-6`}>
               <div className="flex items-center space-x-4">
                 <img 

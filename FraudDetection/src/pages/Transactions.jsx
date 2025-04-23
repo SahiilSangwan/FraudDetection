@@ -17,12 +17,10 @@ const Transactions = () => {
   const [amount, setAmount] = useState("");
   const navigate = useNavigate();
 
-  // Filter beneficiaries based on search input
   const filteredBeneficiaries = transactionBeneficiaries.filter((b) =>
     b.beneficiaryName.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Fetch beneficiaries based on bank type
   const fetchBeneficiaries = useCallback(() => {
     getUserTransacionBeneficiaries(bankType);
   }, [bankType, getUserTransacionBeneficiaries]);
@@ -49,7 +47,6 @@ const Transactions = () => {
       return;
     }
 
-    // Prepare transaction data to pass via navigation state
     const transactionData = {
       receiverAcc: selectedBeneficiary.beneficiaryAccountNumber,
       ifscCodeUser: selectedBeneficiary.ifscCode,
@@ -60,10 +57,9 @@ const Transactions = () => {
       beneficiaryBank: selectedBeneficiary.beneficiaryBank
     };
 
-    // Navigate with state instead of using localStorage
     navigate("/confirm-payment", { 
       state: { transactionData },
-      replace: true // Prevent going back to this page with browser back button
+      replace: true 
     });
     
     toast.success("Transaction processing...");

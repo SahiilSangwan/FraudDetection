@@ -63,7 +63,6 @@ const ConfirmPayment = () => {
     ifsc: confirmationData.data.beneficiaryIfscCode
   } : {};
 
-  // Handle OTP timer
   useEffect(() => {
     let timer;
     if (otpSent && resendTimer > 0) {
@@ -75,7 +74,7 @@ const ConfirmPayment = () => {
   const sendOTP = async () => {
     setIsLoading(true);
     try {
-      // This would be your actual OTP sending API call
+
       await sendTOTP();
       toast.success("OTP sent to your registered email");
       setOtpSent(true);
@@ -99,12 +98,10 @@ const ConfirmPayment = () => {
       return;
     }
 
-    if (amountNum <= limitAmount) {
-      // Below limit - only ask for MPIN
+    if (amountNum <= limitAmount) { 
       setAuthType('pin');
       setShowAuthModal(true);
     } else {
-      // Above limit - ask for both MPIN and OTP
       setAuthType('pinOtp');
       setShowAuthModal(true);
       sendOTP();
@@ -159,8 +156,6 @@ const ConfirmPayment = () => {
   };
 
   const proceedWithPayment = () => {
-    
-    // toast.success("Payment processed");
     navigate('/user-dashboard');
   };
 
@@ -178,7 +173,6 @@ const ConfirmPayment = () => {
     setOtpSent(false);
   };
 
-  // If no transaction data, redirect back
   if (!transactionData || !amount) {
     useEffect(() => {
       toast.error("Invalid transaction data");

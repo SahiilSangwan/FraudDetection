@@ -6,13 +6,11 @@ import { AdminContext } from '../context/AdminContext'
 const AdminProfile = () => {
 
   const {adminData,adminDetail} = useContext(AdminContext)
-
   const [isEditing, setIsEditing] = useState(false);
 
-
-    useEffect(()=>{
-        adminDetail()
-    },[])
+  useEffect(()=>{
+    adminDetail()
+  },[])
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

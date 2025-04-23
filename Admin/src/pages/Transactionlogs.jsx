@@ -5,13 +5,11 @@ import { AdminContext } from '../context/AdminContext';
 const TransactionLogsPage = () => {
   const { getTransactionLogs, TransactionsLogs } = useContext(AdminContext);
 
-
-    const reference = 'INV20231017-003'
-    const location = 'Bangalore'
-    const device = 'Laptop'
-    const ipAddress = '172.58.10.33'
+  const reference = 'INV20231017-003'
+  const location = 'Bangalore'
+  const device = 'Laptop'
+  const ipAddress = '172.58.10.33'
   
-
   // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [bankFilter, setBankFilter] = useState('all');
@@ -266,7 +264,6 @@ const TransactionLogsPage = () => {
   );
 };
 
-// Reusable component for detail items
 const DetailItem = ({ label, value }) => (
   <div>
     <p className="text-sm font-medium text-gray-500">{label}</p>

@@ -4,20 +4,19 @@ import { toast } from 'react-toastify';
 import { assets } from '../assets/assets'; 
 import { UserContext } from '../context/UserContext';
 import axios from 'axios';
+import { FaArrowLeft } from "react-icons/fa";
 
 const Login = () => {
   const navigate = useNavigate();
   const bank =localStorage.getItem('bank') || "default";
   bank.toUpperCase()
 
-  // Bank logos mapping
   const bankLogos = {
     sbi: assets?.sbi,
     hdfc: assets?.hdfc,
     icici: assets?.icici,
   };
 
-  // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [captcha, setCaptcha] = useState('');
@@ -26,7 +25,6 @@ const Login = () => {
 
   const canvasRef = useRef(null);
 
-  // Generate CAPTCHA
   const generateCaptcha = () => {
     const chars = 'abcdefghijkmnopqrstuvwxyz23456789';
     let captchaText = '';
@@ -37,7 +35,6 @@ const Login = () => {
     drawCaptcha(captchaText);
   };
 
-  // Draw CAPTCHA on canvas
   const drawCaptcha = (text) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -74,16 +71,13 @@ const Login = () => {
 
     try{
 
-        // CAPTCHA validation
         if (!captcha.trim() || captcha.trim().toLowerCase() !== generatedCaptcha.toLowerCase()) {
           toast.error('CAPTCHA is incorrect.');
           return;
         }
-        // Encrypt email and password
         const encryptedEmail = encryption(email); 
         const encryptedPassword = encryption(password);
-        console.log("email : "+encryptedEmail)
-        console.log("password : "+encryptedPassword)
+
         const {data} = await axios.post(backendUrl + `/users/login?bank=${bank}`, {encryptedEmail,encryptedPassword},{withCredentials:true})
         if(data.status){
             navigate("/verification");
@@ -99,13 +93,19 @@ const Login = () => {
     }
 }
 
-
-  return (
+return (
 
         <div className={`min-h-screen flex items-center justify-center p-4 ${getBankTheme(bank).background}`}>
           <div className={`bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-md ${getBankTheme(bank).border}`}>
-            {/* Bank Header with Dynamic Theme */}
-            <div className={`${getBankTheme(bank).header} p-6 text-center`}>
+            {/* Bank Header*/}
+            <div className={`${getBankTheme(bank).header} p-6 text-center relative`}>
+              <button 
+                  onClick={() => navigate('/')}
+                  className="absolute left-4 top-6 text-white hover:text-gray-200 transition"
+                  aria-label="Go back to login"
+                >
+                  <FaArrowLeft className="text-xl" />
+              </button>
               <div className="flex justify-center mb-3">
                 <img
                   src={bankLogos[bank] || 'fallback-image.png'}
@@ -120,7 +120,7 @@ const Login = () => {
 
             {/* Login Form */}
             <form onSubmit={onSubmit} className="p-8">
-              {/* Email Field */}
+              
               <div className="mb-6">
                 <label htmlFor="email" className="block text-gray-700 font-medium mb-2">Email Address</label>
                 <div className="relative">
@@ -142,7 +142,6 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Password Field */}
               <div className="mb-6">
                 <label htmlFor="password" className="block text-gray-700 font-medium mb-2">Password</label>
                 <div className="relative">
@@ -166,7 +165,7 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Compact CAPTCHA Section */}
+              {/* CAPTCHA Section */}
               <div className="mb-6">
                 <label htmlFor="captcha" className="block text-gray-700 font-medium mb-2">Security Code</label>
                 <div className="flex items-center space-x-2">
@@ -198,7 +197,7 @@ const Login = () => {
                 />
               </div>
 
-              {/* Login Button with Bank Theme */}
+              {/* Login Button*/}
               <button
                 type="submit"
                 className={`w-full ${getBankTheme(bank).button} text-white py-3 px-4 rounded-lg font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-md transition-all`}
@@ -208,7 +207,7 @@ const Login = () => {
 
             </form>
 
-            {/* Security Footer */}
+            {/* Footer */}
             <div className="bg-gray-50 px-8 py-3 border-t border-gray-200">
               <div className="flex items-center justify-center space-x-2">
                 <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">

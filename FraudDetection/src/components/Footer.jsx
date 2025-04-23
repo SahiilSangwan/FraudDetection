@@ -3,10 +3,8 @@ import { UserContext } from '../context/UserContext';
 
 const Footer = () => {
     const bank =localStorage.getItem('bank') || "default";
-
     const {getBankTheme} = useContext(UserContext);
-  
-
+    
   return (
 
     <footer className={`bg-gradient-to-r ${getBankTheme(bank).header} text-white py-6`}>

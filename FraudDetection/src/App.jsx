@@ -35,7 +35,6 @@ const App = () => {
     return null;
   };
 
-
   AntiInspect();
 
   return uToken && vToken ? (

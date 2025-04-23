@@ -29,11 +29,6 @@ const AdminContextProvider = (props) => {
         }
     }
 
-
-
-
-
-
     const adminDetail = async () =>{
 
         try{
@@ -58,7 +53,6 @@ const AdminContextProvider = (props) => {
         }
     }
 
-        // Add this function to your AdminContext
     const getFraudTransactions = async () => {
       try {
         const response = await axios.get(`${backendUrl}/api/admin/transactions/fraud`, { withCredentials: true });
@@ -81,7 +75,6 @@ const AdminContextProvider = (props) => {
         }
     }
 
-
     const getBlockedUsers = async () =>{
 
         try{
@@ -93,6 +86,7 @@ const AdminContextProvider = (props) => {
             toast.error(error.message)
         }
     }
+
     const getTransactionLogs = async () =>{
 
         try{
@@ -195,8 +189,6 @@ const AdminContextProvider = (props) => {
         }
       };
 
-
-
       const markAsFraud = async (transactionId) => {
         try {
           const { data } = await axios.put(
@@ -214,23 +206,22 @@ const AdminContextProvider = (props) => {
         }
     };
 
-// Mark transaction as normal
-const markAsNormal = async (transactionId) => {
-  try {
-    const { data } = await axios.put(
-      `${backendUrl}/api/admin/transactions/${transactionId}/mark-normal`,
-      {},
-      { withCredentials: true }
-    );
-    if (data.success) {
-      toast.success('Transaction cleared');
-      return true;
-    }
-  } catch (error) {
-    toast.error('Failed to clear transaction');
-    return false;
-  }
-};
+    const markAsNormal = async (transactionId) => {
+      try {
+        const { data } = await axios.put(
+          `${backendUrl}/api/admin/transactions/${transactionId}/mark-normal`,
+          {},
+          { withCredentials: true }
+        );
+        if (data.success) {
+          toast.success('Transaction cleared');
+          return true;
+        }
+      } catch (error) {
+        toast.error('Failed to clear transaction');
+        return false;
+      }
+    };
 
     const value ={
         aToken,setAToken,

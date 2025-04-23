@@ -1,37 +1,15 @@
 import { useState, useEffect, useContext } from 'react';
 import { AdminContext } from '../context/AdminContext'
-import { 
-  FiArrowUp, FiArrowDown, FiDollarSign, FiAlertTriangle, 
-  FiCheckCircle, FiTrendingUp, FiActivity, FiRefreshCw 
-} from 'react-icons/fi';
+import { FiArrowUp, FiArrowDown, FiDollarSign, FiAlertTriangle, FiCheckCircle, FiTrendingUp, FiActivity, FiRefreshCw } from 'react-icons/fi';
 import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import {Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend} from 'chart.js';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const AdminDashBoard = () => {
 
   const {DashTransaction,bankStats,recentTransactions, banks} = useContext(AdminContext)
-
-
   const [loading, setLoading] = useState(false);
-
-
 
   const refreshData = () => {
     setLoading(true);  

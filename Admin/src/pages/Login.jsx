@@ -4,14 +4,11 @@ import { toast } from 'react-toastify'
 import { AdminContext } from '../context/AdminContext'
 import { useNavigate } from 'react-router-dom'
 
-
-
 const Login = () => {
 
     const navigate = useNavigate();
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-
     const {setAToken, backendUrl} = useContext(AdminContext)
 
     const onSubmit = async (event) =>{
@@ -30,12 +27,10 @@ const Login = () => {
                 toast.error(data.message)
             }
 
-
         }catch(error){
             toast.error(error.message)
         }
     }
-
 
   return (
 

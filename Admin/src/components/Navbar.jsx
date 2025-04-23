@@ -3,8 +3,6 @@ import { assets } from '../assets/assets'
 import { AdminContext } from '../context/AdminContext'
 import { useNavigate } from 'react-router-dom'
 
-
-
 const navbar = () => {
 
     const {aToken,setAToken,logoutuser } = useContext(AdminContext)

@@ -15,10 +15,6 @@ import Blockedusers from './pages/Blockedusers';
 import Updatepin from './pages/Updatepin';
 import Landing from './pages/Landing';
 
-
-
-
-
 const App = () => {
 
   const {aToken} = useContext(AdminContext)

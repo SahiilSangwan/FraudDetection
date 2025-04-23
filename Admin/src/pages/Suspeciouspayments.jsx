@@ -74,7 +74,6 @@ const Suspeciouspayments = () => {
 
       if (success) {
         setShowMpinModal(false);
-        // Refresh the transactions list
         const data = await getSuspiciousTransactions();
         setTransactions(data);
       }

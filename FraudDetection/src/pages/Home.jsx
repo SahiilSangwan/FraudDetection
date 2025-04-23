@@ -18,7 +18,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
-      {/* Animated header */}
+      {/* header */}
       <div className="text-center mb-12 animate-fade-in">
         <h1 className="text-5xl font-bold text-gray-800 mb-4">
           Welcome to <span className="text-blue-600">Digital</span> Banking
@@ -28,7 +28,7 @@ const Home = () => {
         </p>
       </div>
 
-      {/* Bank cards with hover effects */}
+      {/* Bank card */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-6xl w-full">
         {banks.map((bank, index) => (
           <div 
@@ -58,30 +58,7 @@ const Home = () => {
       <div className="mt-16 text-center text-gray-500 text-sm">
         <p>Your banking experience is protected with strong encryption for added security.</p>
       </div>
-
-      {/* Add these animations to your global CSS */}
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes fadeInUp {
-          from { 
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.8s ease-out;
-        }
-        .animate-fade-in-up {
-          animation: fadeInUp 0.6s ease-out forwards;
-        }
-      `}</style>
+      
     </div>
   );
 };
