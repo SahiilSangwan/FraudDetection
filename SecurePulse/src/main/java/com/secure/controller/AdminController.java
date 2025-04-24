@@ -1,9 +1,9 @@
 package com.secure.controller;
 
 import com.secure.model.Admin;
-import com.secure.operations.AdminOperation;
-import com.secure.services.EmailService;
-import com.secure.services.OtpService;
+import com.secure.services.AdminService;
+import com.secure.utils.EmailProvider;
+import com.secure.utils.OtpProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,28 +19,28 @@ import java.util.Map;
 public class AdminController {
 
     @Autowired
-    private EmailService emailService;
+    private EmailProvider emailProvider;
 
     @Autowired
-    private OtpService otpService;
+    private OtpProvider otpProvider;
 
 
-    private final AdminOperation adminOperation;
+    private final AdminService adminService;
 
     @Autowired
-    public AdminController(AdminOperation adminOperation) {
-        this.adminOperation = adminOperation;
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpServletResponse response) {
+    public ResponseEntity<Map<String,Object>> login(@RequestBody Map<String, String> credentials, HttpServletResponse response) {
         String email = credentials.get("email");
         String password = credentials.get("password");
-        return adminOperation.authenticateAdmin(email, password, response);
+        return adminService.authenticateAdmin(email, password, response);
     }
 
     @PostMapping("/verify-mpin")
-    public ResponseEntity<?> verifyMpin(
+    public ResponseEntity<Map<String,Object>> verifyMpin(
             @RequestBody Map<String, String> request,
             @CookieValue(name = "admin_token", required = false) String authToken,
             HttpServletResponse response) {
@@ -64,89 +64,89 @@ public class AdminController {
             ));
         }
 
-        ResponseEntity<?> verificationResponse = adminOperation.verifyMpin(email, mpin, authToken);
+        ResponseEntity<Map<String,Object>> verificationResponse = adminService.verifyMpin(email, mpin, authToken);
 
         return verificationResponse;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerAdmin(@RequestBody Admin admin) {
-        return adminOperation.createAdmin(admin);
+    public ResponseEntity<Object> registerAdmin(@RequestBody Admin admin) {
+        return adminService.createAdmin(admin);
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<Admin>> getAllAdmins() {
-        return ResponseEntity.ok(adminOperation.getAllAdmins());
+        return ResponseEntity.ok(adminService.getAllAdmins());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getAdminById(@PathVariable Integer id) {
-        return adminOperation.getAdminById(id);
+    public ResponseEntity<Map<String,Object>> getAdminById(@PathVariable Integer id) {
+        return adminService.getAdminById(id);
     }
 
     @GetMapping("/transactions/stats")
-    public ResponseEntity<?> getTransactionStatsByBank() {
-        List<Map<String, Object>> stats = adminOperation.getTransactionStatsByBank();
+    public ResponseEntity<Object> getTransactionStatsByBank() {
+        List<Map<String, Object>> stats = adminService.getTransactionStatsByBank();
         return ResponseEntity.ok(stats);
     }
 
     @GetMapping("/transactions/fraud")
-    public ResponseEntity<?> getFraudTransactions() {
-        return ResponseEntity.ok(adminOperation.getFraudTransactions());
+    public ResponseEntity<Object> getFraudTransactions() {
+        return ResponseEntity.ok(adminService.getFraudTransactions());
     }
 
     @GetMapping("/transactions/suspicious")
-    public ResponseEntity<?> getSuspiciousTransactions() {
-        return ResponseEntity.ok(adminOperation.getSuspiciousTransactions());
+    public ResponseEntity<Object> getSuspiciousTransactions() {
+        return ResponseEntity.ok(adminService.getSuspiciousTransactions());
     }
 
     @GetMapping("/transactions/bank/{bankName}/recent")
-    public ResponseEntity<?> getRecentBankTransactions(@PathVariable String bankName) {
-        return ResponseEntity.ok(adminOperation.getRecentBankTransactions(bankName.toUpperCase()));
+    public ResponseEntity<Object> getRecentBankTransactions(@PathVariable String bankName) {
+        return ResponseEntity.ok(adminService.getRecentBankTransactions(bankName.toUpperCase()));
     }
 
     @GetMapping("/transactions/bank/{bankName}/all")
-    public ResponseEntity<?> getAllBankTransactions(@PathVariable String bankName) {
-        return ResponseEntity.ok(adminOperation.getAllBankTransactions(bankName.toUpperCase()));
+    public ResponseEntity<Object> getAllBankTransactions(@PathVariable String bankName) {
+        return ResponseEntity.ok(adminService.getAllBankTransactions(bankName.toUpperCase()));
     }
 
     @PutMapping("/update-password")
-    public ResponseEntity<?> updatePassword(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String,Object>> updatePassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String newPassword = request.get("password");
-        return adminOperation.updatePassword(email, newPassword);
+        return adminService.updatePassword(email, newPassword);
     }
 
     @PutMapping("/update-mpin")
-    public ResponseEntity<?> updateMpin(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String,Object>> updateMpin(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String newMpin = request.get("mpin");
-        return adminOperation.updateMpin(email, newMpin);
+        return adminService.updateMpin(email, newMpin);
     }
 
     @GetMapping("/transactions/latest")
-    public ResponseEntity<?> getLatestTransactions() {
-        return ResponseEntity.ok(adminOperation.getLatestTransactions());
+    public ResponseEntity<Object> getLatestTransactions() {
+        return ResponseEntity.ok(adminService.getLatestTransactions());
     }
 
     @GetMapping("/transactions/all-latest")
-    public ResponseEntity<?> getAllLatestTransactions() {
-        return ResponseEntity.ok(adminOperation.getAllLatestTransactions());
+    public ResponseEntity<Object> getAllLatestTransactions() {
+        return ResponseEntity.ok(adminService.getAllLatestTransactions());
     }
 
     @GetMapping("/transaction/{transactionId}")
-    public ResponseEntity<?> getTransactionDetails(@PathVariable Integer transactionId) {
-        return adminOperation.getTransactionDetails(transactionId);
+    public ResponseEntity<Object> getTransactionDetails(@PathVariable Integer transactionId) {
+        return adminService.getTransactionDetails(transactionId);
     }
 
     @GetMapping("/blocked-users")
-    public ResponseEntity<?> getBlockedUsers() {
-        return adminOperation.getBlockedUsers();
+    public ResponseEntity<Object> getBlockedUsers() {
+        return adminService.getBlockedUsers();
     }
 
     @DeleteMapping("/blocked-users/{id}")
-    public ResponseEntity<?> deleteBlockedUser(@PathVariable int id) {
-        return adminOperation.deleteBlockedUser(id);
+    public ResponseEntity<Map<String,Object>> deleteBlockedUser(@PathVariable int id) {
+        return adminService.deleteBlockedUser(id);
     }
 
     @PostMapping("/logout")
@@ -178,7 +178,7 @@ public class AdminController {
         }
 
         // Generate OTP
-        String otp = otpService.generateOtp(email);
+        String otp = otpProvider.generateOtp(email);
 
         // Construct OTP message
         String subject = "Your SecurePulse OTP - Verify Your Identity";
@@ -226,7 +226,7 @@ public class AdminController {
                 "</html>";
 
         // Send email with formatted OTP
-        emailService.sendEmail(email, subject, messageBody);
+        emailProvider.sendEmail(email, subject, messageBody);
 
         return Map.of("status", true, "message", "OTP has been sent successfully to your email.");
     }
@@ -243,7 +243,7 @@ public class AdminController {
             return Map.of("otpVerified", false, "message", "Email, OTP, and purpose are required for verification.");
         }
 
-        if (otpService.validateOtp(email, otp)) {
+        if (otpProvider.validateOtp(email, otp)) {
             System.out.println("OTP verification successful!");
             return Map.of("otpVerified", true, "message", "OTP verification was successful!");
         } else {
@@ -253,9 +253,9 @@ public class AdminController {
     }
 
     @PutMapping("/transactions/{transactionId}/mark-normal")
-    public ResponseEntity<?> markTransactionNormal(@PathVariable Integer transactionId) {
+    public ResponseEntity<Map<String,Object>> markTransactionNormal(@PathVariable Integer transactionId) {
         try {
-            boolean updated = adminOperation.markTransactionAsNormal(transactionId);
+            boolean updated = adminService.markTransactionAsNormal(transactionId);
             if (updated) {
                 return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -275,9 +275,9 @@ public class AdminController {
     }
 
     @PutMapping("/transactions/{transactionId}/mark-fraud")
-    public ResponseEntity<?> markTransactionFraud(@PathVariable Integer transactionId) {
+    public ResponseEntity<Map<String,Object>> markTransactionFraud(@PathVariable Integer transactionId) {
         try {
-            boolean updated = adminOperation.markTransactionAsFraud(transactionId);
+            boolean updated = adminService.markTransactionAsFraud(transactionId);
             if (updated) {
                 return ResponseEntity.ok(Map.of(
                     "success", true,

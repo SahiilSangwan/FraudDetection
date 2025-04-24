@@ -1,12 +1,13 @@
 
-package com.secure.operations;
+package com.secure.services;
 
+import com.secure.exception.CustomException;
 import com.secure.model.*;
 import com.secure.repository.AccountRepository;
 import com.secure.repository.BeneficiaryRepository;
 import com.secure.repository.TransactionRepository;
 import com.secure.repository.UserRepository;
-import com.secure.services.EmailService;
+import com.secure.utils.EmailProvider;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,18 +18,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
-public class TransactionOperations {
+public class TransactionService {
     private final AccountRepository accountRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final TransactionRepository transactionRepository;
     @Autowired
     private  UserRepository userRepository;
     @Autowired
-    private EmailService emailService;
+    private EmailProvider emailProvider;
 
     private static final Map<String, Object> accountLocks = new ConcurrentHashMap<>();
 
-    public TransactionOperations(AccountRepository accountRepository, BeneficiaryRepository beneficiaryRepository, TransactionRepository transactionRepository) {
+    public TransactionService(AccountRepository accountRepository, BeneficiaryRepository beneficiaryRepository, TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
         this.beneficiaryRepository = beneficiaryRepository;
         this.transactionRepository = transactionRepository;
@@ -169,7 +170,7 @@ public class TransactionOperations {
                     accountRepository.save(sender);
                     accountRepository.save(receiver);
                     System.out.println("✅ Account Balances Updated!");
-                    System.out.println(description);
+
 
                     // Create transaction record
                     Transaction transaction = new Transaction();
@@ -249,7 +250,7 @@ public class TransactionOperations {
                             "</body>" +
                             "</html>";
 
-                    emailService.sendEmail(senderEmail,senderSubject,senderMessageBody);
+                    emailProvider.sendEmail(senderEmail,senderSubject,senderMessageBody);
 
 
 
@@ -309,7 +310,7 @@ public class TransactionOperations {
                             "</body>" +
                             "</html>";
 
-                            emailService.sendEmail(recieverEmail,subject,messageBody);
+                            emailProvider.sendEmail(recieverEmail,subject,messageBody);
 
 
 
@@ -317,64 +318,13 @@ public class TransactionOperations {
                 } catch (Exception e) {
                     System.out.println("❌ Error saving transaction: " + e.getMessage());
                     e.printStackTrace();
-                    return Map.of("status", false, "message", "Transaction failed: " + e.getMessage());
+                    throw new CustomException("Transaction failed: " + e.getMessage());
                 }
             }
         }
     }
 
-//    public Map<String, Object> getTransactionsByUserId(Integer userId) {
-//        System.out.println("🔹 Fetching transactions for User ID: " + userId);
-//
-//        List<Transaction> sentTransactions = transactionRepository.findBySenderId(userId);
-//        List<Transaction> receivedTransactions = transactionRepository.findByReceiverId(userId);
-//
-//
-//        List<TransactionSummary> allTransactions = new ArrayList<>();
-//
-//        // Process sent (debited) transactions
-//        for (Transaction txn : sentTransactions) {
-//            if(txn.getFlag()==Transaction.TransactionFlag.FAILED){
-//                continue;
-//            }
-//
-//            allTransactions.add(new TransactionSummary(
-//                    txn.getTransactionId(),
-//                    txn.getDescription(),
-//                    txn.getTimestamp(),
-//                    null,
-//                    txn.getAmountTransferred(),
-//                    txn.getCurrentBalanceSender()
-//            ));
-//        }
-//
-//        // Process received (credited) transactions
-//        for (Transaction txn : receivedTransactions) {
-//            if(txn.getFlag()==Transaction.TransactionFlag.FAILED){
-//                continue;
-//            }
-//            allTransactions.add(new TransactionSummary(
-//                    txn.getTransactionId(),
-//                    txn.getDescription(),
-//                    txn.getTimestamp(),
-//                    txn.getAmountTransferred(), // Credited amount
-//                    (null),
-//                    txn.getCurrentBalanceReceiver()// No debited amount
-//            ));
-//        }
-//
-//        // Sort transactions by timestamp (latest first)
-//        allTransactions = allTransactions.stream()
-//                .sorted(Comparator.comparing(TransactionSummary::getTimestamp).reversed())
-//                .collect(Collectors.toList());
-//
-//        // Prepare response
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("status", true);
-//        response.put("transactions", allTransactions);
-//
-//        return response;
-//    }
+
 
     public Map<String, Object> getTransactionsByUserId(Integer userId) {
         try {
@@ -424,10 +374,7 @@ public class TransactionOperations {
 
         } catch (Exception e) {
             System.out.println("❌ Error fetching transactions: " + e.getMessage());
-            return Map.of(
-                    "status", false,
-                    "message", "Failed to fetch transactions"
-            );
+            throw new CustomException("Failed to fetch transactions");
         }
     }
 }

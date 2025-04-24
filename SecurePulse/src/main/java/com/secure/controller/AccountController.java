@@ -1,69 +1,116 @@
 package com.secure.controller;
 
+import com.secure.exception.CustomException;
 import com.secure.model.Account;
-import com.secure.operations.AccountOperations;
+import com.secure.services.AccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
+// AccountController handles all account-related operations such as retrieving, adding, etc.
 @RestController
 @RequestMapping("api/accounts")
 public class AccountController {
 
-    private final AccountOperations accountOperations;
+    private final AccountService accountService;
 
-    public AccountController(AccountOperations accountOperations) {
-        this.accountOperations = accountOperations;
+    // Constructor for AccountController.
+    public AccountController(AccountService accountService) {
+        this.accountService = accountService;
     }
 
-    // Get all accounts for a user
+    // Retrieves all accounts associated with a specific user.
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Account>> getAccountsByUserId(@PathVariable Integer userId) {
-        List<Account> accounts = accountOperations.getAccountsByUserId(userId);
-        return ResponseEntity.ok(accounts);
+        try {
+            List<Account> accounts = accountService.getAccountsByUserId(userId);
+            if (accounts.isEmpty()) {
+                throw new CustomException("No accounts found for the given user ID");
+            }
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while retrieving accounts for the user");
+        }
     }
 
-    // Get account by account number
+    // Retrieves account details by account number.
     @GetMapping("/{accountNumber}")
     public ResponseEntity<Account> getAccountByNumber(@PathVariable String accountNumber) {
-        Optional<Account> account = accountOperations.getAccountByNumber(accountNumber);
-        return account.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        try {
+            Account account = accountService.getAccountByNumber(accountNumber)
+                    .orElseThrow(() -> new CustomException("Account not found for the given account number"));
+            return ResponseEntity.ok(account);
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while retrieving the account details");
+        }
     }
 
-    // Get all accounts for a bank
+    // Retrieves all accounts associated with a specific bank.
     @GetMapping("/bank/{bank}")
     public ResponseEntity<List<Account>> getAccountsByBank(@PathVariable String bank) {
-        List<Account> accounts = accountOperations.getAccountsByBank(bank);
-        return ResponseEntity.ok(accounts);
+        try {
+            List<Account> accounts = accountService.getAccountsByBank(bank);
+            if (accounts.isEmpty()) {
+                throw new CustomException("No accounts found for the given bank");
+            }
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while retrieving accounts for the bank");
+        }
     }
 
-    // Get all active accounts for a user
+    // Retrieves all active accounts for a specific user.
     @GetMapping("/user/{userId}/active")
     public ResponseEntity<List<Account>> getActiveAccountsByUserId(@PathVariable Integer userId) {
-        List<Account> accounts = accountOperations.getActiveAccountsByUserId(userId);
-        return ResponseEntity.ok(accounts);
+        try {
+            List<Account> accounts = accountService.getActiveAccountsByUserId(userId);
+            if (accounts.isEmpty()) {
+                throw new CustomException("No active accounts found for the given user ID");
+            }
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while retrieving active accounts for the user");
+        }
     }
 
-    // Get all accounts for a user in a specific bank
+    // Retrieves all accounts for a specific user in a specific bank.
     @GetMapping("/user/{userId}/bank/{bank}")
     public ResponseEntity<List<Account>> getAccountsByUserIdAndBank(@PathVariable Integer userId, @PathVariable String bank) {
-        List<Account> accounts = accountOperations.getAccountsByUserIdAndBank(userId, bank);
-        return ResponseEntity.ok(accounts);
+        try {
+            List<Account> accounts = accountService.getAccountsByUserIdAndBank(userId, bank);
+            if (accounts.isEmpty()) {
+                throw new CustomException("No accounts found for the given user ID and bank");
+            }
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while retrieving accounts for the user and bank");
+        }
     }
 
-    // Add or update an account
+    // Adds or updates an account.
     @PostMapping("/save")
     public ResponseEntity<Account> saveAccount(@RequestBody Account account) {
-        Account savedAccount = accountOperations.saveAccount(account);
-        return ResponseEntity.ok(savedAccount);
+        try {
+            if (account == null) {
+                throw new CustomException("Account details cannot be null");
+            }
+            Account savedAccount = accountService.saveAccount(account);
+            return ResponseEntity.ok(savedAccount);
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while saving the account");
+        }
     }
 
-    // Delete an account by ID
+    // Deletes an account by its ID.
     @DeleteMapping("/{accountId}")
     public ResponseEntity<Void> deleteAccount(@PathVariable Integer accountId) {
-        accountOperations.deleteAccount(accountId);
-        return ResponseEntity.noContent().build();
+        try {
+
+            accountService.deleteAccount(accountId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while deleting the account");
+        }
     }
 }

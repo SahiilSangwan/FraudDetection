@@ -1,27 +1,20 @@
 package com.secure.filter;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
-
-import com.secure.services.JwtService;
+import com.secure.utils.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final JwtProvider jwtProvider;
 
-    public JwtAuthFilter(JwtService jwtService) {
-        this.jwtService = jwtService;
+    public JwtAuthFilter(JwtProvider jwtProvider) {
+        this.jwtProvider = jwtProvider;
     }
 
     @Override
@@ -29,7 +22,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        System.out.println("🔍 Incoming Request: " + requestURI);
 
         // ✅ Allow `/api/users` & `/api/users/login` without any token
         if ((requestURI.equals("/api/users") ||
@@ -83,12 +75,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      * Extract and validate a JWT token from a cookie
      */
     private boolean validateTokenFromCookie(HttpServletRequest request, String tokenName) {
-        String token = jwtService.extractTokenFromCookies(request, tokenName);
+        String token = jwtProvider.extractTokenFromCookies(request, tokenName);
         if (token != null) {
             System.out.println("🔑 Checking " + tokenName + ": " + token);
-            boolean ans=jwtService.validateToken(token);
-            System.out.println(ans);
-            return jwtService.validateToken(token);
+            return jwtProvider.validateToken(token);
         }
         return false;
     }

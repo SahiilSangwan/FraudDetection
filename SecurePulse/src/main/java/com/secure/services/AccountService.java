@@ -1,4 +1,4 @@
-package com.secure.operations;
+package com.secure.services;
 
 import com.secure.model.Account;
 import com.secure.repository.AccountRepository;
@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class AccountOperations {
+public class AccountService {
 
     private final AccountRepository accountRepository;
 
-    public AccountOperations(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
     }
 
@@ -45,11 +45,6 @@ public class AccountOperations {
     public Account saveAccount(Account account) {
         return accountRepository.save(account);
     }
-    
- 
-//    public Optional<Account> getAccountByIfscAndAccountNumber(String ifscCode, String accountNumber) {
-//        return accountRepository.findByIfscCodeAndAccountNumber(ifscCode, accountNumber);
-//    }
 
     
     public void deleteAccount(Integer accountId) {

@@ -1,4 +1,4 @@
-package com.secure.services;
+package com.secure.utils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -8,7 +8,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 @Service
-public class EmailService {
+public class EmailProvider {
 
     @Autowired
     private JavaMailSender mailSender;

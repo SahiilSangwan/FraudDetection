@@ -1,9 +1,9 @@
-package com.secure.services;
+package com.secure.utils;
 
 import org.springframework.stereotype.Service;
 
 @Service
-public class Decryption {
+public class DecryptionProvider {
     public  String decryptString(String encryptedInput) {
         if (encryptedInput == null || encryptedInput.isEmpty()) {
             throw new IllegalArgumentException("Encrypted input must be a non-empty string.");

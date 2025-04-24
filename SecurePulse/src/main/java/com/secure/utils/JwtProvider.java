@@ -1,4 +1,4 @@
-package com.secure.services;
+package com.secure.utils;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 
 @Service
-public class JwtService {
+public class JwtProvider {
 
     private static final String SECRET_KEY = "07nk94rplj";
     private static final String AUTH_COOKIE_NAME = "auth_token";

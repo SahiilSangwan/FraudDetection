@@ -30,9 +30,7 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
 
     // Find all accounts for a user in a specific bank
     List<Account> findByUserIdAndBank(Integer userId, String bank);
-    
-    @Query("SELECT a FROM Account a WHERE a.ifscCode = :ifscCode AND a.accountNumber = :accountNumber")
-    Optional<Account> findByIfscCodeAndAccountNumber(@Param("ifscCode") String ifscCode, 
-                                                     @Param("accountNumber") String accountNumber);
+
+    boolean existsByUserIdAndBank(Integer userId, String bank);
 
 }

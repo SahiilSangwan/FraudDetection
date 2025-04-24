@@ -1,5 +1,6 @@
-package com.secure.operations;
+package com.secure.services;
 
+import com.secure.exception.CustomException;
 import com.secure.model.Account;
 import com.secure.model.Beneficiary;
 import com.secure.model.Compare;
@@ -7,88 +8,60 @@ import com.secure.model.User;
 import com.secure.repository.AccountRepository;
 import com.secure.repository.BeneficiaryRepository;
 import com.secure.repository.UserRepository;
+import com.secure.utils.EmailProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.*;
-import com.secure.exception.BeneficiaryException;
-import com.secure.services.EmailService;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
-public class BeneficiaryOperations {
+public class BeneficiaryService {
 
     @Autowired
-    private EmailService emailService;
+    private EmailProvider emailProvider;
 
     private final AccountRepository accountRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final UserRepository userRepository;
 
-    public BeneficiaryOperations(AccountRepository accountRepository, BeneficiaryRepository beneficiaryRepository, UserRepository userRepository) {
+    public BeneficiaryService(AccountRepository accountRepository, BeneficiaryRepository beneficiaryRepository, UserRepository userRepository) {
         this.accountRepository = accountRepository;
         this.beneficiaryRepository = beneficiaryRepository;
         this.userRepository = userRepository;
     }
 
-    public Map<String,Object> addBeneficiary(Integer userId, String userBank, String accountNumber, String ifscCode, BigDecimal amount,String name) throws BeneficiaryException {
-        // ✅ Check if beneficiary already exists
-        Map<String,Object> response = new HashMap<>();
+    public Map<String, Object> addBeneficiary(Integer userId, String userBank, String accountNumber, String ifscCode, BigDecimal amount, String name) {
+        Map<String, Object> response = new HashMap<>();
         Optional<Beneficiary> existingBeneficiary = beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(userId, accountNumber);
         if (existingBeneficiary.isPresent()) {
-            response.put("success", false);
-            response.put("message", "Beneficiary already exists");
-            response.put("data",null);
-            return response;
+            throw new CustomException("Beneficiary already exists");
         }
 
-        // ✅ Fetch beneficiary account details
         Optional<Account> accountOptional = accountRepository.findByAccountNumber(accountNumber);
         if (accountOptional.isEmpty()) {
-            response.put("success", false);
-            response.put("message", "Account does not exist");
-            response.put("data",null);
-            return response;
+            throw new CustomException("Account does not exist");
         }
 
         Account beneficiaryAccount = accountOptional.get();
         if (!beneficiaryAccount.getIfscCode().equals(ifscCode)) {
-            response.put("success", false);
-            response.put("message", "Account does not match ifsc code");
-            response.put("data",null);
-            return response;
-
+            throw new CustomException("Account does not match IFSC code");
         }
 
         Integer beneficiaryUserId = beneficiaryAccount.getUserId();
         String beneficiaryBank = beneficiaryAccount.getBank();
 
-        // ✅ Fetch beneficiary user details
         Optional<User> userOptional = userRepository.findById(beneficiaryUserId);
-
         if (userOptional.isEmpty()) {
-            response.put("success", false);
-            response.put("message", "User does not exist");
-            response.put("data",null);
-            return response;
-
+            throw new CustomException("User does not exist");
         }
 
-        System.out.print(beneficiaryUserId+" "+userId);
-        System.out.println(userBank + " " + beneficiaryBank);
-        if(Objects.equals(userOptional.get().getUserId(), userId) && userBank.equals(beneficiaryBank)){
-            response.put("success", false);
-            response.put("message", "Can not add the same person as beneficiary  : " + beneficiaryUserId);
-            response.put("data",null);
-            return response;
-
+        if (Objects.equals(userOptional.get().getUserId(), userId) && userBank.equals(beneficiaryBank)) {
+            throw new CustomException("Cannot add the same person as beneficiary: " + beneficiaryUserId);
         }
 
-
-        // ✅ Create new Beneficiary entry
         Beneficiary beneficiary = new Beneficiary();
         beneficiary.setUserId(userId);
         beneficiary.setBeneficiaryUserId(beneficiaryUserId);
@@ -98,15 +71,13 @@ public class BeneficiaryOperations {
         beneficiary.setAmount(amount);
         beneficiary.setIfscCode(ifscCode);
         beneficiaryRepository.save(beneficiary);
+
         response.put("success", true);
-        response.put("data",beneficiary);
+        response.put("data", beneficiary);
         response.put("message", "Successfully added beneficiary");
 
         String emailUser = userRepository.getById(userId).getEmail();
-
-
         String subject = "New Beneficiary Added Successfully - SecurePulse";
-
         LocalDateTime activationTime = LocalDateTime.now().plusHours(1);
         String formattedTime = activationTime.format(DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy"));
 
@@ -165,7 +136,7 @@ public class BeneficiaryOperations {
                 "</body>" +
                 "</html>";
 
-                emailService.sendEmail(emailUser, subject, messageBody);
+        emailProvider.sendEmail(emailUser, subject, messageBody);
 
         return response;
     }
@@ -267,7 +238,7 @@ public class BeneficiaryOperations {
                 "</body>" +
                 "</html>";
 
-            emailService.sendEmail(emailUser, subject, messageBody);
+            emailProvider.sendEmail(emailUser, subject, messageBody);
 
         return beneficiaryRepository.save(beneficiary);
     }
@@ -294,40 +265,50 @@ public class BeneficiaryOperations {
             return beneficiaryRepository.findByUserIdAndBeneficiaryBankNotAndUpdatedAtLessThanEqual(userId, userBank, oneHourAgo);
         }
     }
-    public Map<String,Object> compareBeneficiary(Integer userId, Integer beneficiaryId,String userBank) {
-        Map<String, Object> response = new HashMap<>();
-        Optional<Beneficiary> beneficiaryOptional = beneficiaryRepository.findById(beneficiaryId);
+    public Map<String, Object> compareBeneficiary(Integer userId, Integer beneficiaryId, String userBank) {
+        try {
+            Optional<Beneficiary> beneficiaryOptional = beneficiaryRepository.findById(beneficiaryId);
 
-        if (beneficiaryOptional.isEmpty()) {
-            response.put("success", false);
-            response.put("message", "Beneficiary not found");
-            response.put("data", null);
-            return response;
+            if (beneficiaryOptional.isEmpty()) {
+                throw new CustomException("Beneficiary not found");
+            }
+
+            Account userAccount = accountRepository.findByUserIdAndBank(userId, userBank)
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new CustomException("User account not found for the given bank"));
+
+            Beneficiary beneficiary = beneficiaryOptional.get();
+
+            Account beneficiaryAccount = accountRepository.findByUserIdAndBank(beneficiary.getBeneficiaryUserId(), beneficiary.getBeneficiaryBank())
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new CustomException("Beneficiary account not found for the given bank"));
+
+            Optional<User> userOptional = userRepository.findById(userId);
+            Optional<User> beneficiaryUserOptional = userRepository.findById(beneficiary.getBeneficiaryUserId());
+
+            if (userOptional.isEmpty() || beneficiaryUserOptional.isEmpty()) {
+                throw new CustomException("User or Beneficiary user not found");
+            }
+
+            String beneficiaryIfsc = beneficiaryAccount.getIfscCode();
+            String userIfscCode = userAccount.getIfscCode();
+            String userName = userOptional.get().getFirstName() + " " + userOptional.get().getLastName();
+            String beneficiaryName = beneficiaryUserOptional.get().getFirstName() + " " + beneficiaryUserOptional.get().getLastName();
+            String userAccountNumber = userAccount.getAccountNumber();
+            String beneficiaryAccountNumber = beneficiaryAccount.getAccountNumber();
+
+            Compare compare = new Compare(userName, beneficiaryName, userAccountNumber, beneficiaryAccountNumber, userIfscCode, beneficiaryIfsc);
+
+            return Map.of(
+                    "success", true,
+                    "data", compare
+            );
+        } catch (CustomException e) {
+            throw e; // Let the global exception handler handle this
+        } catch (Exception e) {
+            throw new CustomException("An error occurred while comparing the beneficiary");
         }
-        Account useraccount = accountRepository.findByUserIdAndBank(userId,userBank).get(0);
-        Beneficiary beneficiary = beneficiaryOptional.get();
-        Account beneficiaryAccount = accountRepository.findByUserIdAndBank(beneficiary.getBeneficiaryUserId(),beneficiary.getBeneficiaryBank()).get(0);
-        Optional<User> userOptional = userRepository.findById(userId);
-        Optional<User> beneficiaryUserOptional = userRepository.findById(beneficiary.getBeneficiaryUserId());
-        if (userOptional.isEmpty() || beneficiaryUserOptional.isEmpty()) {
-            response.put("success", false);
-            response.put("message", "User not found");
-            response.put("data", null);
-            return response;
-        }
-        String beneficiaryIfsc = beneficiaryAccount.getIfscCode();
-        String userIfscCode = useraccount.getIfscCode();
-        String userName = userOptional.get().getFirstName() + " " + userOptional.get().getLastName();
-        String beneficiaryName = beneficiaryUserOptional.get().getFirstName() + " " + beneficiaryUserOptional.get().getLastName();
-        String userAccountNumber = useraccount.getAccountNumber();
-        String beneficiaryAccountNumber = beneficiaryAccount.getAccountNumber();
-        Compare compare = new Compare(userName, beneficiaryName, userAccountNumber, beneficiaryAccountNumber, userIfscCode, beneficiaryIfsc);
-        response.put("success", true);
-        response.put("data", compare);
-        return response;
-
-
-
     }
-
 }
