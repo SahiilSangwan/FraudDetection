@@ -34,7 +34,7 @@ const AdminContextProvider = (props) => {
         try{
             const { data } = await axios.get(backendUrl+`/api/admin/${adminId}`, { withCredentials: true });
             if(data != null){
-                setAdminData(data)
+                setAdminData(data.admin)
             }
         }catch (error) {
             toast.error(error.message)
@@ -47,6 +47,7 @@ const AdminContextProvider = (props) => {
             const {data} = await axios.get(backendUrl+`/api/admin/transactions/stats`, { withCredentials: true });
             if(data != null){
                 setBanks(data)
+                console.log(data)
             }
         }catch (error) {
             toast.error(error.message)

@@ -25,9 +25,9 @@ const App = () => {
       <ToastContainer/>
       <Navbar />
 
-      <div className='flex items-start'>
+      <div className='flex items-start pt-18'>
         <Sidebar />
-
+        
         <Routes>
           {/* Admin Route */}
           <Route path='/' element={<Landing/>} />

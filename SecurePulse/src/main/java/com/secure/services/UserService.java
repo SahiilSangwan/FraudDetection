@@ -20,40 +20,45 @@ import java.util.Optional;
 @Component
 public class UserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-
+    // Constants for common error messages
     private static final String USER_NOT_FOUND = "User not found";
     private static final String INVALID_MPIN = "Invalid MPIN";
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final OtpProvider otpProvider;
 
-    @Autowired
-    private AccountRepository accountRepository;
+    // Constructor injection
+    public UserService(UserRepository userRepository, AccountRepository accountRepository, BCryptPasswordEncoder passwordEncoder, OtpProvider otpProvider) {
+        this.userRepository = userRepository;
+        this.accountRepository = accountRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.otpProvider = otpProvider;
+    }
 
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    private OtpProvider otpProvider;
-
+    // Fetch all users from the database
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    // Fetch a user by ID
     public Optional<User> getUserById(Integer id) {
         return userRepository.findById(id);
     }
 
+    // Fetch a user by email
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
+    // Register a new user (encrypts password before saving)
     public User createUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
+    // Update existing user details by ID
     public User updateUser(Integer id, User userDetails) {
         return userRepository.findById(id)
                 .map(user -> {
@@ -71,15 +76,18 @@ public class UserService {
                 }).orElseThrow(() -> new CustomException(USER_NOT_FOUND));
     }
 
+    // Delete user by ID
     public String deleteUser(Integer id) {
         userRepository.deleteById(id);
         return "User deleted successfully";
     }
 
+    // Validate login credentials and confirm the user has an account with the given bank
     public Optional<User> getUserByEmailAndPassword(String email, String rawPassword, String bank) {
         Optional<User> user = userRepository.findByEmail(email);
 
         if (user.isPresent() && passwordEncoder.matches(rawPassword, user.get().getPassword())) {
+
             boolean hasAccount = accountRepository.existsByUserIdAndBank(user.get().getUserId(), bank);
             if (hasAccount) {
                 return user;
@@ -89,6 +97,7 @@ public class UserService {
         return Optional.empty();
     }
 
+    // Set new MPIN for a user (only if 6 digits)
     public ResponseEntity<Map<String, Object>> setUserMpin(String email, String mpin) {
         if (mpin.length() != 6) {
             throw new CustomException("MPIN must be 6 digits");
@@ -109,6 +118,7 @@ public class UserService {
         }
     }
 
+    // Update an existing MPIN after validating length
     public ResponseEntity<Map<String, Object>> updateUserMpin(String email, String newMpin) {
         if (newMpin.length() != 6) {
             throw new CustomException("MPIN must be 6 digits");
@@ -134,6 +144,7 @@ public class UserService {
         }
     }
 
+    // Verifies if the provided MPIN matches the stored encrypted MPIN
     public ResponseEntity<Map<String, Object>> verifyMpin(String email, String mpin) {
         Optional<User> userOptional = getUserByEmail(email);
 
@@ -156,6 +167,7 @@ public class UserService {
         throw new CustomException(INVALID_MPIN);
     }
 
+    // Verifies MPIN and OTP in sequence for high-security actions
     public ResponseEntity<Map<String, Object>> verifyMpinOtp(String email, String otp, String mpin) {
         ResponseEntity<?> response = verifyMpin(email, mpin);
         Map<String, Object> responseBody = (Map<String, Object>) response.getBody();

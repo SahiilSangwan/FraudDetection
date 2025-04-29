@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <style>
+    body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+    .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; }
+    .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }
+    .content { padding: 30px; text-align: center; }
+    .warning-icon { color: #e74c3c; font-size: 48px; margin-bottom: 20px; }
+    .alert-box { background: #fdecea; padding: 15px; border-left: 4px solid #e74c3c; margin: 20px 0; text-align: left; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }
+    .button { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }
+    .divider { border-top: 1px solid #eee; margin: 25px 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>SecurePulse</h1>
+    <p>by WISSEN Technology</p>
+  </div>
+  <div class="content">
+    <div class="warning-icon">⚠️</div>
+    <h2 style="color: #2c3e50;">Multiple Incorrect Attempts Detected</h2>
+
+    <div class="alert-box">
+      <p>We detected <strong>multiple unsuccessful attempts</strong> to access your account or perform an action.</p>
+      <p><strong>Date/Time:</strong> <span th:text="${timestamp}"></span></p>
+    </div>
+
+    <p>For your security, we recommend:</p>
+    <ul style="text-align: left; margin-left: 20px;">
+      <li>Ensure you're using the correct credentials</li>
+      <li>Reset your password if you've forgotten it</li>
+      <li>Contact support if you didn't initiate these attempts</li>
+    </ul>
+
+    <div class="divider"></div>
+
+    <a href="#" class="button">Reset Password</a>
+
+    <p style="font-size: 13px; color: #7f8c8d;">This is an automated security notification. No action is required if you recognize this activity.</p>
+  </div>
+  <div class="footer">
+    <p>© 2025 SecurePulse by WISSEN Technology. All rights reserved.</p>
+    <p>123 Tech Park, Innovation City | support@securepulse.com</p>
+  </div>
+</div>
+</body>
+</html>

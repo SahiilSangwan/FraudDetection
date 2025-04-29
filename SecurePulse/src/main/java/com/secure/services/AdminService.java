@@ -6,11 +6,12 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.secure.exception.CustomException;
 import com.secure.model.*;
 import com.secure.repository.*;
+import com.secure.utils.ApplicationCache;
 import com.secure.utils.EmailProvider;
 import com.secure.utils.JwtProvider;
+import com.secure.utils.TemplateProvider;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -26,30 +27,38 @@ import jakarta.servlet.http.Cookie;
 @Component
 public class AdminService {
 
-    @Autowired
-    private EmailProvider emailProvider;
+    private final EmailProvider emailProvider;
+    private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
+    private final AdminRepository adminRepository;
+    private final BlockedUserRepository blockedUserRepository;
+    private final JwtProvider jwtProvider;
+    private final TransactionService transactionService;
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final TemplateProvider templateProvider;
 
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private TransactionRepository transactionRepository;
-
-    @Autowired
-    private AdminRepository adminRepository;
-
-    @Autowired
-    private BlockedUserRepository blockedUserRepository;
-
-    @Autowired
-    private JwtProvider jwtProvider;
-
-    @Autowired
-    private TransactionService transactionService;
-
-    @Autowired
-    private UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    public AdminService(EmailProvider emailProvider,
+                        AccountRepository accountRepository,
+                        TransactionRepository transactionRepository,
+                        AdminRepository adminRepository,
+                        BlockedUserRepository blockedUserRepository,
+                        JwtProvider jwtProvider,
+                        TransactionService transactionService,
+                        UserRepository userRepository,
+                        BCryptPasswordEncoder passwordEncoder,
+                        TemplateProvider templateProvider) {
+        this.emailProvider = emailProvider;
+        this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
+        this.adminRepository = adminRepository;
+        this.blockedUserRepository = blockedUserRepository;
+        this.jwtProvider = jwtProvider;
+        this.transactionService = transactionService;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.templateProvider = templateProvider;
+    }
 
     public ResponseEntity<Map<String,Object>> authenticateAdmin(String email, String password, HttpServletResponse response) {
         Optional<Admin> adminOpt = adminRepository.findByEmail(email);
@@ -67,6 +76,7 @@ public class AdminService {
         authCookie.setPath("/"); // cookie will be available across the entire application
         authCookie.setMaxAge(3600); // 1 hour (in seconds)
         response.addCookie(authCookie);
+        ApplicationCache.put(token,true);
 
         List<BlockedUser> blockedUsers = blockedUserRepository.findAll(Sort.by("createdAt").descending());
         Timestamp twoHoursAgo = new Timestamp(System.currentTimeMillis() - (2 * 60 * 60 * 1000));
@@ -81,55 +91,9 @@ public class AdminService {
         }
 
         String subject = "Admin Login Detected - SecurePulse Dashboard";
+        String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy"));
 
-        String messageBody = "<!DOCTYPE html>" +
-                "<html>" +
-                "<head>" +
-                "    <style>" +
-                "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
-                "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
-                "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
-                "        .header h1 { color: #ffffff; margin: 0; }" +
-                "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
-                "        .content { padding: 30px; text-align: center; }" +
-                "        .success-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }" +
-                "        .login-details { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
-                "        .login-details p { margin: 10px 0; }" +
-                "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
-                "        .button { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }" +
-                "        .security-note { background: #fff8e1; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; text-align: left; }" +
-                "    </style>" +
-                "</head>" +
-                "<body>" +
-                "    <div class='container'>" +
-                "        <div class='header'>" +
-                "            <h1>SecurePulse Admin</h1>" +
-                "            <p>by WISSEN Technology</p>" +
-                "        </div>" +
-                "        <div class='content'>" +
-                "            <div class='success-icon'>✓</div>" +
-                "            <h2 style='color: #2c3e50;'>Administrator Login Successful</h2>" +
-                "            " +
-                "            <div class='login-details'>" +
-                "                <p><strong>Login Time:</strong> " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy")) + "</p>" +
-                "            </div>" +
-                "            " +
-                "            <div class='security-note'>" +
-                "                <p><strong>Security Recommendation:</strong> Always log out from shared devices and enable two-factor authentication for enhanced security.</p>" +
-                "            </div>" +
-                "            " +
-                "            <a href='#' class='button'>View Login Activity</a>" +
-                "            " +
-                "            <p style='font-size: 13px; color: #7f8c8d;'>If this wasn't you, please secure your account immediately.</p>" +
-                "        </div>" +
-                "        <div class='footer'>" +
-                "            <p>© 2025 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
-                "            <p>24/7 Security Team: security@securepulse.com | Emergency: +91 9876543210</p>" +
-                "        </div>" +
-                "    </div>" +
-                "</body>" +
-                "</html>";
-
+        String messageBody = templateProvider.buildAdminLoginSuccessEmail(timestamp);
         emailProvider.sendEmail(email, subject, messageBody);
 
         return ResponseEntity.ok(Map.of(
@@ -165,20 +129,20 @@ public class AdminService {
         }
     }
 
-    public ResponseEntity<Object> createAdmin(Admin admin) {
-        if (adminRepository.findByEmail(admin.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email already exists"));
-        }
-
-        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
-        admin.setMpin(passwordEncoder.encode(admin.getMpin()));
-        Admin savedAdmin = adminRepository.save(admin);
-        return ResponseEntity.ok(savedAdmin); // ✅ Admin is returned without type conflict
-    }
-
-    public List<Admin> getAllAdmins() {
-        return adminRepository.findAll();
-    }
+//    public ResponseEntity<Object> createAdmin(Admin admin) {
+//        if (adminRepository.findByEmail(admin.getEmail()).isPresent()) {
+//            return ResponseEntity.badRequest().body(Map.of("message", "Email already exists"));
+//        }
+//
+//        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+//        admin.setMpin(passwordEncoder.encode(admin.getMpin()));
+//        Admin savedAdmin = adminRepository.save(admin);
+//        return ResponseEntity.ok(savedAdmin); // ✅ Admin is returned without type conflict
+//    }
+//
+//    public List<Admin> getAllAdmins() {
+//        return adminRepository.findAll();
+//    }
 
     public ResponseEntity<Map<String, Object>> getAdminById(Integer id) {
         Optional<Admin> admin = adminRepository.findById(id);
@@ -201,7 +165,7 @@ public class AdminService {
         Map<String, Map<String, Long>> bankStatsMap = new HashMap<>();
 
         // Initialize stats for each bank
-        String[] banks = {"HDFC", "ICICI", "SBI"};
+        String[] banks = {"HERITAGE", "FINOVA", "WISSEN"};
         for (String bank : banks) {
             Map<String, Long> stats = new HashMap<>();
             stats.put("incoming", 0L);
@@ -261,6 +225,8 @@ public class AdminService {
                 })
                 .collect(Collectors.toList());
     }
+
+    // Returns all transactions marked as fraud
     public List<Map<String, Object>> getFraudTransactions() {
         List<Transaction> fraudTransactions = transactionRepository
                 .findByMarked(Transaction.TransactionMarked.FRAUD);
@@ -282,6 +248,8 @@ public class AdminService {
                 })
                 .collect(Collectors.toList());
     }
+
+    // Returns all transactions marked as suspicious
     public List<Map<String, Object>> getSuspiciousTransactions() {
         List<Transaction> suspiciousTransactions = transactionRepository
                 .findByMarked(Transaction.TransactionMarked.SUSPICIOUS);
@@ -305,18 +273,23 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
+    // Returns the most recent transactions for a specific bank
+
     public List<Map<String, Object>> getRecentBankTransactions(String bankName) {
         List<Transaction> transactions = transactionRepository
                 .findRecentByBank(bankName, PageRequest.of(0, 10));
         return formatTransactions(transactions);
     }
 
+    // Returns all transactions for a specific bank
     public List<Map<String, Object>> getAllBankTransactions(String bankName) {
         List<Transaction> transactions = transactionRepository
                 .findRecentByBank(bankName, PageRequest.of(0, 150));
         return formatTransactions(transactions);
     }
 
+
+    // Returns all transactions for a specific user
     private List<Map<String, Object>> formatTransactions(List<Transaction> transactions) {
         return transactions.stream()
                 .map(transaction -> {
@@ -336,23 +309,24 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
-    public ResponseEntity<Map<String,Object>> updatePassword(String email, String newPassword) {
-        Optional<Admin> adminOpt = adminRepository.findByEmail(email);
+//    public ResponseEntity<Map<String,Object>> updatePassword(String email, String newPassword) {
+//        Optional<Admin> adminOpt = adminRepository.findByEmail(email);
+//
+//        if (adminOpt.isEmpty()) {
+//            throw new CustomException("Admin not found");
+//        }
+//
+//        Admin admin = adminOpt.get();
+//        admin.setPassword(passwordEncoder.encode(newPassword));
+//        adminRepository.save(admin);
+//
+//        return ResponseEntity.ok(Map.of(
+//                "message", "Password updated successfully",
+//                "success", true
+//        ));
+//    }
 
-        if (adminOpt.isEmpty()) {
-            throw new CustomException("Admin not found");
-        }
-
-        Admin admin = adminOpt.get();
-        admin.setPassword(passwordEncoder.encode(newPassword));
-        adminRepository.save(admin);
-
-        return ResponseEntity.ok(Map.of(
-                "message", "Password updated successfully",
-                "success", true
-        ));
-    }
-
+    // Updates the MPIN for the admin
     public ResponseEntity<Map<String,Object>> updateMpin(String email, String newMpin) {
         Optional<Admin> adminOpt = adminRepository.findByEmail(email);
 
@@ -365,57 +339,9 @@ public class AdminService {
         adminRepository.save(admin);
 
         String subject = "MPIN Successfully Updated - SecurePulse";
+        String timeStamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy"));
 
-        String messageBody = "<!DOCTYPE html>" +
-                "<html>" +
-                "<head>" +
-                "    <style>" +
-                "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
-                "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
-                "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
-                "        .header h1 { color: #ffffff; margin: 0; }" +
-                "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
-                "        .content { padding: 30px; text-align: center; }" +
-                "        .success-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }" +
-                "        .details-box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
-                "        .details-box p { margin: 10px 0; }" +
-                "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
-                "        .security-note { background: #fff8e1; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; text-align: left; }" +
-                "    </style>" +
-                "</head>" +
-                "<body>" +
-                "    <div class='container'>" +
-                "        <div class='header'>" +
-                "            <h1>SecurePulse</h1>" +
-                "            <p>by WISSEN Technology</p>" +
-                "        </div>" +
-                "        <div class='content'>" +
-                "            <div class='success-icon'>✓</div>" +
-                "            <h2 style='color: #2c3e50;'>MPIN Update Confirmation</h2>" +
-                "            " +
-                "            <div class='details-box'>" +
-                "                <p><strong>Status:</strong> <span style='color: #2ecc71;'>Successfully Changed</span></p>" +
-                "                <p><strong>Changed On:</strong> " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy")) + "</p>" +
-                "            </div>" +
-                "            " +
-                "            <div class='security-note'>" +
-                "                <p><strong>Important Security Note:</strong></p>" +
-                "                <ul style='margin-top: 5px; padding-left: 20px;'>" +
-                "                    <li>Never share your MPIN with anyone</li>" +
-                "                    <li>Change your MPIN regularly for security</li>" +
-                "                    <li>Contact support immediately if you didn't make this change</li>" +
-                "                </ul>" +
-                "            </div>" +
-                "            " +
-                "            <p style='font-size: 13px; color: #7f8c8d;'>This is an automated confirmation. No reply is needed.</p>" +
-                "        </div>" +
-                "        <div class='footer'>" +
-                "            <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
-                "            <p>24/7 Security Helpline: +91 9876543210 | security@securepulse.com</p>" +
-                "        </div>" +
-                "    </div>" +
-                "</body>" +
-                "</html>";
+        String messageBody =templateProvider.buildMpinUpdateConfirmationEmail(timeStamp);
 
         emailProvider.sendEmail(email, subject, messageBody);
 
@@ -425,7 +351,7 @@ public class AdminService {
         ));
     }
 
-
+    // Returns the most recent transactions
     public List<Map<String, Object>> getLatestTransactions() {
         List<Transaction> transactions = transactionRepository.findAll(
                 PageRequest.of(0, 10, Sort.by("timestamp").descending())
@@ -467,7 +393,7 @@ public class AdminService {
     }
 
 
-
+    // Returns all transactions
     public List<Map<String, Object>> getAllLatestTransactions() {
         List<Transaction> transactions = transactionRepository.findAll(
                 PageRequest.of(0, 150, Sort.by("timestamp").descending())
@@ -564,7 +490,9 @@ public class AdminService {
         return ResponseEntity.ok(transactionDetails);
     }
 
-    public ResponseEntity<Object> getBlockedUsers() {
+
+    // Returns all blocked users
+    public ResponseEntity<List<Map<String, Object>>> getBlockedUsers() {
         try {
             List<BlockedUser> blockedUsers = blockedUserRepository.findAll(Sort.by("createdAt").descending());
 
@@ -602,6 +530,7 @@ public class AdminService {
         }
     }
 
+    // Deletes a blocked user by ID
     public ResponseEntity<Map<String,Object>> deleteBlockedUser(int id) {
         if (!blockedUserRepository.existsById(id)) {
             throw new CustomException("Blocked user not found");
@@ -615,61 +544,8 @@ public class AdminService {
             blockedUserRepository.deleteById(id);
 
             String subject = "Account Access Restored - SecurePulse";
-
-            String messageBody = "<!DOCTYPE html>" +
-                    "<html>" +
-                    "<head>" +
-                    "    <style>" +
-                    "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
-                    "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
-                    "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
-                    "        .header h1 { color: #ffffff; margin: 0; }" +
-                    "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
-                    "        .content { padding: 30px; text-align: center; }" +
-                    "        .success-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }" +
-                    "        .details-box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
-                    "        .details-box p { margin: 10px 0; }" +
-                    "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
-                    "        .button { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }" +
-                    "        .security-tip { background: #e8f5e9; padding: 15px; border-left: 4px solid #2ecc71; margin: 20px 0; text-align: left; }" +
-                    "    </style>" +
-                    "</head>" +
-                    "<body>" +
-                    "    <div class='container'>" +
-                    "        <div class='header'>" +
-                    "            <h1>SecurePulse</h1>" +
-                    "            <p>by WISSEN Technology</p>" +
-                    "        </div>" +
-                    "        <div class='content'>" +
-                    "            <div class='success-icon'>✓</div>" +
-                    "            <h2 style='color: #2c3e50;'>Your Account Has Been Restored</h2>" +
-                    "            " +
-                    "            <div class='details-box'>" +
-                    "                <p><strong>Status:</strong> <span style='color: #2ecc71;'>Active</span></p>" +
-                    "                <p><strong>Unblocked By:</strong> Administrator</p>" +
-                    "                <p><strong>Date/Time:</strong> " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy")) + "</p>" +
-                    "            </div>" +
-                    "            " +
-                    "            <div class='security-tip'>" +
-                    "                <p><strong>✔️ You can now:</strong></p>" +
-                    "                <ul style='margin-top: 5px; padding-left: 20px;'>" +
-                    "                    <li>Access all account features</li>" +
-                    "                    <li>Perform transactions normally</li>" +
-                    "                    <li>Log in from your usual devices</li>" +
-                    "                </ul>" +
-                    "            </div>" +
-                    "            " +
-                    "            <a href='https://securepulse.com/login' class='button'>Login to Your Account</a>" +
-                    "            " +
-                    "            <p style='font-size: 13px; color: #7f8c8d;'>If you still experience issues, please contact our support team.</p>" +
-                    "        </div>" +
-                    "        <div class='footer'>" +
-                    "            <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
-                    "            <p>123 Tech Park, Innovation City | support@securepulse.com | +91 9876543210 </p>" +
-                    "        </div>" +
-                    "    </div>" +
-                    "</body>" +
-                    "</html>";
+            String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy"));
+            String messageBody = templateProvider.buildAccountRestoredEmail(timestamp);
 
             emailProvider.sendEmail(userEmail, subject, messageBody);
 

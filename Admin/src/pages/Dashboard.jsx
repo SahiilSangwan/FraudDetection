@@ -172,8 +172,8 @@ const AdminDashBoard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{txn.transactionId}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${txn.senderBank === 'HDFC' ? 'bg-blue-100 text-blue-800' : 
-                          txn.senderBank === 'ICICI' ? 'bg-purple-100 text-purple-800' : 
+                        ${txn.senderBank === 'WISSEN' ? 'bg-blue-100 text-blue-800' : 
+                          txn.senderBank === 'HERITAGE' ? 'bg-purple-100 text-purple-800' : 
                           'bg-green-100 text-green-800'}`}>
                         {txn.senderBank}
                       </span>
@@ -183,8 +183,8 @@ const AdminDashBoard = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${txn.receiverBank === 'HDFC' ? 'bg-blue-100 text-blue-800' : 
-                          txn.receiverBank === 'ICICI' ? 'bg-purple-100 text-purple-800' : 
+                        ${txn.receiverBank === 'WISSEN' ? 'bg-blue-100 text-blue-800' : 
+                          txn.receiverBank === 'HERITAGE' ? 'bg-purple-100 text-purple-800' : 
                           'bg-green-100 text-green-800'}`}>
                         {txn.receiverBank}
                       </span>

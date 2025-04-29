@@ -1,5 +1,6 @@
 package com.secure.filter;
 
+import com.secure.utils.ApplicationCache;
 import com.secure.utils.JwtProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -76,9 +77,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      */
     private boolean validateTokenFromCookie(HttpServletRequest request, String tokenName) {
         String token = jwtProvider.extractTokenFromCookies(request, tokenName);
-        if (token != null) {
+        if (token != null ) {
             System.out.println("🔑 Checking " + tokenName + ": " + token);
-            return jwtProvider.validateToken(token);
+            if(ApplicationCache.containsKey(token)) return jwtProvider.validateToken(token);
         }
         return false;
     }

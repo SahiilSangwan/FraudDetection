@@ -14,21 +14,38 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.Map;
 
+/**
+ * Controller responsible for handling transaction-related endpoints such as
+ * initiating a transaction and fetching user transactions.
+ */
 @RestController
 @RequestMapping("api/transaction")
 public class TransactionController {
-    @Autowired
-    private TransactionService transactionService;
-    @Autowired
-    private JwtProvider jwtProvider;
+
+    private final TransactionService transactionService;
+    private final JwtProvider jwtProvider;
+    private final DecryptionProvider Decrypt;
 
     @Autowired
-    private DecryptionProvider Decrypt;
+    public TransactionController(TransactionService transactionService,
+                                 JwtProvider jwtProvider,
+                                 DecryptionProvider decrypt) {
+        this.transactionService = transactionService;
+        this.jwtProvider = jwtProvider;
+        this.Decrypt = decrypt;
+    }
 
+    /**
+     * Endpoint to initiate a transaction from the authenticated user to a beneficiary.
+     *
+     * @param requestBody Encrypted request payload containing transaction details.
+     * @param request     HTTP request to extract JWT token for sender identification.
+     * @return ResponseEntity containing transaction status or error details.
+     */
     @PostMapping("/add")
     public ResponseEntity<Map<String, Object>> addTransaction(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
         try {
-            // Extract data from request body
+            // Decrypt and extract transaction details from request body
             Integer receiverId = Integer.parseInt(Decrypt.decryptString(requestBody.get("eSelectedBeneficiaryID").toString()));
             String receiverAccountNumber = Decrypt.decryptString((String) requestBody.get("eReceiverAcc"));
             BigDecimal amountTransferred = new BigDecimal(Decrypt.decryptString(requestBody.get("eAmount").toString()));
@@ -36,7 +53,7 @@ public class TransactionController {
             Integer otpAttempt = (Integer) requestBody.get("totpAttempt");
             String desc = (String) requestBody.get("description");
 
-            // Extract senderId from JWT token
+            // Extract and validate sender details from JWT token
             String authToken = jwtProvider.extractAuthToken(request);
             DecodedJWT decodedJWT = jwtProvider.extractClaims(authToken);
             if (decodedJWT == null) {
@@ -46,25 +63,45 @@ public class TransactionController {
             Integer senderId = decodedJWT.getClaim("userId").asInt();
             String userBank = decodedJWT.getClaim("userBank").asString();
 
-            // Call the function in TransactionService
-            Map<String, Object> response = transactionService.addTransaction(senderId, receiverId, receiverAccountNumber, amountTransferred, ifscCode, userBank, desc, otpAttempt);
+            // Perform transaction using service layer
+            Map<String, Object> response = transactionService.addTransaction(
+                    senderId, receiverId, receiverAccountNumber, amountTransferred, ifscCode, userBank, desc, otpAttempt
+            );
+
             return ResponseEntity.ok(response);
+
         } catch (CustomException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", false, "message", e.getMessage()));
+            // Handle business logic exceptions
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    Map.of("status", false, "message", e.getMessage())
+            );
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("status", false, "message", "An unexpected error occurred: " + e.getMessage()));
+            // Handle unexpected runtime exceptions
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    Map.of("status", false, "message", "An unexpected error occurred: " + e.getMessage())
+            );
         }
     }
 
+    /**
+     * Endpoint to retrieve all transactions related to a specific user.
+     *
+     * @param userId ID of the user whose transactions are to be fetched.
+     * @return ResponseEntity containing list of transactions or error message.
+     */
     @GetMapping("/get/{userId}")
     public ResponseEntity<Map<String, Object>> getTransactionsByUserId(@PathVariable Integer userId) {
         try {
             Map<String, Object> response = transactionService.getTransactionsByUserId(userId);
             return ResponseEntity.ok(response);
         } catch (CustomException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", false, "message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    Map.of("status", false, "message", e.getMessage())
+            );
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("status", false, "message", "An unexpected error occurred: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    Map.of("status", false, "message", "An unexpected error occurred: " + e.getMessage())
+            );
         }
     }
 }

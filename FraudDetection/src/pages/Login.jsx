@@ -12,9 +12,9 @@ const Login = () => {
   bank.toUpperCase()
 
   const bankLogos = {
-    sbi: assets?.sbi,
-    hdfc: assets?.hdfc,
-    icici: assets?.icici,
+    finova: assets?.finova,
+    wissen: assets?.wissen,
+    heritage: assets?.heritage,
   };
 
   const [email, setEmail] = useState('');
@@ -77,6 +77,7 @@ const Login = () => {
         }
         const encryptedEmail = encryption(email); 
         const encryptedPassword = encryption(password);
+        console.log("pass :"+encryptedPassword);
 
         const {data} = await axios.post(backendUrl + `/users/login?bank=${bank}`, {encryptedEmail,encryptedPassword},{withCredentials:true})
         if(data.status){
@@ -160,9 +161,6 @@ return (
                     required
                   />
                 </div>
-                <div className="flex justify-end mt-2">
-                  <a href="#" className={`text-sm ${getBankTheme(bank).link}`}>Forgot password?</a>
-                </div>
               </div>
 
               {/* CAPTCHA Section */}
@@ -172,7 +170,7 @@ return (
                   <canvas 
                     ref={canvasRef} 
                     width="120" 
-                    height="40" 
+                    height="50" 
                     className="border border-gray-300 rounded bg-gray-50 flex-grow h-9"
                   />
                   <button

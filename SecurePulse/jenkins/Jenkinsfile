@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_NETWORK = 'networksecurepulse'
+        MYSQL_HOST = 'mysqlcontainer'
+        APP_IMAGE = 'securepulseimage'
+        CONTAINER_NAME = 'securepulsecontainer'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/ayusharora176/FraudDetection.git'
+            }
+        }
+
+        stage('Remove Old Container and Image') {
+            steps {
+                sh """
+                docker rm -f ${CONTAINER_NAME} || true
+                docker rmi -f ${APP_IMAGE} || true
+                """
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build(env.APP_IMAGE, './SecurePulse')
+                    // ^ Builds Dockerfile inside the SecurePulse folder
+                }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                sh """
+                docker run -d \
+                    --name ${CONTAINER_NAME} \
+                    --network ${DOCKER_NETWORK} \
+                    -e DB_HOST=${MYSQL_HOST} \
+                    -e DB_USER=root \
+                    -e DB_PASSWORD=roo1 \
+                    -p 8080:8080 \
+                    ${APP_IMAGE}
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ SecurePulse backend deployed successfully!'
+        }
+        failure {
+            echo '❌ Deployment failed.'
+        }
+    }
+}

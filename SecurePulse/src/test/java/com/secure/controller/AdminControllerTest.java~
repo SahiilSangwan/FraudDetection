@@ -1,0 +1,390 @@
+package com.secure.controller;
+
+
+import com.secure.exception.CustomException;
+import com.secure.services.AdminService;
+import com.secure.utils.*;
+import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class AdminControllerTest {
+
+    @InjectMocks
+    private AdminController adminController;
+
+    @Mock
+    private AdminService adminService;
+
+    @Mock
+    private OtpProvider otpProvider;
+
+    @Mock
+    private EmailProvider emailProvider;
+
+    @Mock
+    private TemplateProvider templateProvider;
+
+
+    @Test
+    void test_verifyMpinSucess(){
+        String email="test@example.com";
+        String mpin="123456";
+        String token="test-token";
+        Map<String,String> map=new HashMap<>();
+        map.put("email",email);
+        map.put("mpin",mpin);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ResponseEntity<Map<String,Object>> responseEntity=ResponseEntity.ok(Map.of("message","success","success",true));
+        when(adminService.verifyMpin(email,mpin,token)).thenReturn(responseEntity);
+        ResponseEntity<Map<String,Object>> result = adminController.verifyMpin(map,token,response);
+
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals("success", result.getBody().get("message"));
+        assertEquals(true, result.getBody().get("success"));
+
+    }
+
+    @Test
+    void test_loginSucess(){
+        String email="test@example.com";
+        String password="password";
+        Map<String,String> map=new HashMap<>();
+        map.put("email",email);
+        map.put("password",password);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ResponseEntity<Map<String,Object>> responseEntity=ResponseEntity.ok(Map.of("message","success","success",true));
+        when(adminService.authenticateAdmin(email,password,response)).thenReturn(responseEntity);
+        ResponseEntity<Map<String,Object>> result = adminController.login(map,response);
+
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals("success", result.getBody().get("message"));
+        assertEquals(true, result.getBody().get("success"));
+    }
+
+    @Test
+    void test_transactionStatsSucess(){
+        List<Map<String, Object>> stats=new ArrayList<>();
+        when(adminService.getTransactionStatsByBank()).thenReturn(stats);
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getTransactionStatsByBank();
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(stats, response.getBody());
+    }
+
+    @Test
+    void test_getFraudTransactionsSucess(){
+        List<Map<String, Object>> stats=new ArrayList<>();
+        when(adminService.getFraudTransactions()).thenReturn(stats);
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getFraudTransactions();
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(stats, response.getBody());
+    }
+
+    @Test
+    void test_getSuspiciousTransactionsSucess(){
+        List<Map<String, Object>> stats=new ArrayList<>();
+        when(adminService.getSuspiciousTransactions()).thenReturn(stats);
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getSuspiciousTransactions();
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(stats, response.getBody());
+    }
+
+    @Test
+    void test_getRecentTransactionsSucess(){
+        String bankName="testBank";
+        List<Map<String, Object>> stats=new ArrayList<>();
+        when(adminService.getRecentBankTransactions(bankName.toUpperCase())).thenReturn(stats);
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getRecentBankTransactions(bankName);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(stats, response.getBody());
+    }
+
+    @Test
+    void test_getAllBankTransactionsSucess(){
+        String bank="bank";
+        List<Map<String, Object>> stats=new ArrayList<>();
+        when(adminService.getAllBankTransactions(bank.toUpperCase())).thenReturn(stats);
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getAllBankTransactions(bank);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(stats, response.getBody());
+    }
+
+
+    @Test
+    void test_updateMpinSucess(){
+        String email="test@example.com";
+        String mpin="123456";
+        Map<String,String> map=new HashMap<>();
+        map.put("email",email);
+        map.put("mpin",mpin);
+        ResponseEntity<Map<String,Object>> responseEntity=ResponseEntity.ok(Map.of(
+                "message", "MPIN updated successfully",
+                "success", true
+        ));
+        when(adminService.updateMpin(email,mpin)).thenReturn(responseEntity);
+        ResponseEntity<Map<String,Object>> result = adminController.updateMpin(map);
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals("MPIN updated successfully", result.getBody().get("message"));
+        assertEquals(true, result.getBody().get("success"));
+    }
+
+    @Test
+    void test_getLatestTransactionsSucess(){
+        List<Map<String, Object>> stats=new ArrayList<>();
+        when(adminService.getLatestTransactions()).thenReturn(stats);
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getLatestTransactions();
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(stats, response.getBody());
+    }
+
+    @Test
+    void test_getBlockedUsersSucess(){
+        List<Map<String, Object>> stats=new ArrayList<>();
+        ResponseEntity<List<Map<String, Object>>> response = ResponseEntity.ok(stats);
+        when(adminService.getBlockedUsers()).thenReturn(response);
+        ResponseEntity<List<Map<String, Object>>> result = adminController.getBlockedUsers();
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals(stats, result.getBody());
+    }
+
+    @Test
+    void test_deleteBlockedUserSucess(){
+        int testId=1;
+        ResponseEntity<Map<String,Object>> responseEntity=ResponseEntity.ok(Map.of(
+                "message", "User unblocked successfully",
+                "success", true
+        ));
+        when(adminService.deleteBlockedUser(testId)).thenReturn(responseEntity);
+        ResponseEntity<Map<String,Object>> result = adminController.deleteBlockedUser(testId);
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals("User unblocked successfully", result.getBody().get("message"));
+        assertEquals(true, result.getBody().get("success"));
+    }
+
+    @Test
+    void test_sendotpSuccess() {
+        String email = "test@example.com";
+        Map<String, String> request = new HashMap<>();
+        request.put("email", email);
+        // Mock OTP generation
+        when(otpProvider.generateOtp(email)).thenReturn("123456");
+        String otp = otpProvider.generateOtp(email);
+        // Mock template provider
+        when(templateProvider.buildOtpEmailContent(otp)).thenReturn("Otp email content");
+
+        // Mock email sending
+        doNothing().when(emailProvider).sendEmail(eq(email), anyString(), anyString());
+        // Act
+        Map<String, Object> responseEntity = adminController.sendOtp(request);
+        // Assert
+        assertEquals("OTP has been sent successfully to your email.", responseEntity.get("message"));
+        assertEquals(true, responseEntity.get("status"));
+    }
+
+    @Test
+    void test_verifyOtpSuccess() {
+        String email = "test@example.com";
+        String otp = "123456";
+        String purpose = "test";
+        Map<String, String> request = new HashMap<>();
+        request.put("email", email);
+        request.put("otp", otp);
+        request.put("purpose", purpose);
+        MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+        MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+
+        // Mock OTP validation
+        when(otpProvider.validateOtp(email, otp)).thenReturn(true);
+        // Act
+        Map<String, Object> responseEntity = adminController.verifyOtp(request,mockRequest,mockResponse);
+        // Assert
+        assertEquals("OTP verification was successful!", responseEntity.get("message"));
+        assertEquals(true, responseEntity.get("otpVerified"));
+    }
+
+    @Test
+    void test_markTransactionNormalSuccess(){
+        int transactionId=1;
+
+        when(adminService.markTransactionAsNormal(transactionId)).thenReturn(true);
+        ResponseEntity<Map<String,Object>> result = adminController.markTransactionNormal(transactionId);
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals("Transaction marked as normal", result.getBody().get("message"));
+        assertEquals(true, result.getBody().get("success"));
+    }
+
+    @Test
+    void test_markTransactionFraudSuccess() {
+        int transactionId = 1;
+        when(adminService.markTransactionAsFraud(transactionId)).thenReturn(true);
+        ResponseEntity<Map<String, Object>> result = adminController.markTransactionFraud(transactionId);
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals("Transaction marked as fraud", result.getBody().get("message"));
+        assertEquals(true, result.getBody().get("success"));
+    }
+
+    @Test
+    void test_verifyMpinFailure_dueToMissingAuthToken() {
+        String email = "test@example.com";
+        String mpin = "123456";
+        Map<String, String> map = new HashMap<>();
+        map.put("email", email);
+        map.put("mpin", mpin);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ResponseEntity<Map<String, Object>> responseEntity = ResponseEntity.status(401)
+                .body(Map.of("message", "Authentication required", "success", false));
+
+        ResponseEntity<Map<String, Object>> result = adminController.verifyMpin(map, null, response);
+
+        assertEquals(401, result.getStatusCodeValue());
+        assertEquals("Authentication required", result.getBody().get("message"));
+        assertEquals(false, result.getBody().get("success"));
+    }
+
+    @Test
+    void test_loginFailure_dueToInvalidCredentials() {
+        String email = "invalid@example.com";
+        String password = "wrongPassword";
+        Map<String, String> map = new HashMap<>();
+        map.put("email", email);
+        map.put("password", password);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        ResponseEntity<Map<String, Object>> responseEntity = ResponseEntity.status(401)
+                .body(Map.of("message", "Invalid credentials", "success", false));
+
+        when(adminService.authenticateAdmin(email, password, response)).thenReturn(responseEntity);
+        ResponseEntity<Map<String, Object>> result = adminController.login(map, response);
+
+        assertEquals(401, result.getStatusCodeValue());
+        assertEquals("Invalid credentials", result.getBody().get("message"));
+        assertEquals(false, result.getBody().get("success"));
+    }
+
+    @Test
+    void test_updateMpinFailure_dueToInvalidEmail() {
+        String email = "nonexistent@example.com";
+        String mpin = "123456";
+        Map<String, String> map = new HashMap<>();
+        map.put("email", email);
+        map.put("mpin", mpin);
+
+        ResponseEntity<Map<String, Object>> responseEntity = ResponseEntity.status(404)
+                .body(Map.of("message", "Admin not found", "success", false));
+
+        when(adminService.updateMpin(email, mpin)).thenReturn(responseEntity);
+        ResponseEntity<Map<String, Object>> result = adminController.updateMpin(map);
+
+        assertEquals(404, result.getStatusCodeValue());
+        assertEquals("Admin not found", result.getBody().get("message"));
+        assertEquals(false, result.getBody().get("success"));
+    }
+
+
+    @Test
+    void test_sendOtpFailure_dueToMissingEmail() {
+        Map<String, String> request = new HashMap<>();
+        request.put("email", "");
+
+        Map<String, Object> responseEntity = adminController.sendOtp(request);
+
+        assertEquals("Email is required to send OTP.", responseEntity.get("message"));
+        assertEquals(false, responseEntity.get("status"));
+    }
+
+    @Test
+    void test_verifyOtpFailure_dueToInvalidOtp() {
+        String email = "test@example.com";
+        String otp = "wrongOtp";
+        String purpose = "test";
+        Map<String, String> request = new HashMap<>();
+        request.put("email", email);
+        request.put("otp", otp);
+        request.put("purpose", purpose);
+
+        when(otpProvider.validateOtp(email, otp)).thenReturn(false);
+
+        Map<String, Object> responseEntity = adminController.verifyOtp(request, new MockHttpServletRequest(), new MockHttpServletResponse());
+
+        assertEquals("Invalid OTP. Please check and try again.", responseEntity.get("message"));
+        assertEquals(false, responseEntity.get("otpVerified"));
+    }
+
+    @Test
+    void test_logout() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        // Add a mock admin_token cookie to the request
+        Cookie adminTokenCookie = new Cookie("admin_token", "test-token");
+        request.setCookies(adminTokenCookie);
+
+        // Call the logout method
+        adminController.logout(request, response);
+
+        // Verify that the cookie has been removed
+        Cookie[] cookies = response.getCookies();
+        boolean adminTokenCookieRemoved = false;
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("admin_token".equals(cookie.getName()) && cookie.getValue().isEmpty()) {
+                    adminTokenCookieRemoved = true;
+                    break;
+                }
+            }
+        }
+
+        // Assert the cookie was removed
+        assertEquals(true, adminTokenCookieRemoved);
+    }
+
+    // Test case for getAllLatestTransactions
+    @Test
+    void test_getAllLatestTransactions() {
+        List<Map<String, Object>> stats = List.of(Map.of("transactionId", 1, "amount", 1000)); // Mock data
+        when(adminService.getAllLatestTransactions()).thenReturn(stats);
+
+        ResponseEntity<List<Map<String, Object>>> response = adminController.getAllLatestTransactions();
+
+        // Assert that the response status code is 200
+        assertEquals(200, response.getStatusCodeValue());
+        // Assert that the response body matches the mock data
+        assertEquals(stats, response.getBody());
+    }
+
+    // Test case for getTransactionDetails
+//    @Test
+//    void test_getTransactionDetails() {
+//        int transactionId = 1;
+//        Map<String, Object> transactionDetails = Map.of("transactionId", transactionId, "amount", 1000); // Mock data
+//        when(adminService.getTransactionDetails(transactionId)).thenReturn(transactionDetails);
+//
+//        ResponseEntity<Object> response = adminController.getTransactionDetails(transactionId);
+//
+//        // Assert that the response status code is 200
+//        assertEquals(200, response.getStatusCodeValue());
+//        // Assert that the response body matches the mock data
+//        assertEquals(transactionDetails, response.getBody());
+//    }
+
+
+}

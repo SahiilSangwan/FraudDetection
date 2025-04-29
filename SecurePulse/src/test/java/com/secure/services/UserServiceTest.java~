@@ -1,0 +1,174 @@
+package com.secure.services;
+
+import com.secure.exception.CustomException;
+import com.secure.model.User;
+import com.secure.repository.AccountRepository;
+import com.secure.repository.UserRepository;
+import com.secure.utils.OtpProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    private UserRepository userRepository;
+    private AccountRepository accountRepository;
+    private BCryptPasswordEncoder passwordEncoder;
+    private OtpProvider otpProvider;
+    private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        userRepository = mock(UserRepository.class);
+        accountRepository = mock(AccountRepository.class);
+        passwordEncoder = mock(BCryptPasswordEncoder.class);
+        otpProvider = mock(OtpProvider.class);
+        userService = new UserService(userRepository, accountRepository, passwordEncoder, otpProvider);
+    }
+
+    @Test
+    void getAllUsers() {
+        List<User> users = List.of(new User(), new User());
+        when(userRepository.findAll()).thenReturn(users);
+
+        List<User> result = userService.getAllUsers();
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void getUserById() {
+        User user = new User();
+        user.setUserId(1);
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+
+        Optional<User> result = userService.getUserById(1);
+        assertTrue(result.isPresent());
+        assertEquals(1, result.get().getUserId());
+    }
+
+    @Test
+    void getUserByEmail() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+
+        Optional<User> result = userService.getUserByEmail("test@example.com");
+        assertTrue(result.isPresent());
+        assertEquals("test@example.com", result.get().getEmail());
+    }
+
+    @Test
+    void createUser() {
+        User user = new User();
+        user.setPassword("raw");
+        when(passwordEncoder.encode("raw")).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        User result = userService.createUser(user);
+        assertEquals("encoded", result.getPassword());
+    }
+
+    @Test
+    void updateUser() {
+        User user = new User();
+        user.setUserId(1);
+        user.setPassword("newPassword");
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(new User()));
+        when(passwordEncoder.encode("newPassword")).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        User result = userService.updateUser(1, user);
+        assertEquals("encoded", result.getPassword());
+    }
+
+    @Test
+    void deleteUser() {
+        doNothing().when(userRepository).deleteById(1);
+        String result = userService.deleteUser(1);
+        assertEquals("User deleted successfully", result);
+    }
+
+    @Test
+    void getUserByEmailAndPassword_success() {
+        User user = new User();
+        user.setUserId(1);
+        user.setPassword("encoded");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("raw", "encoded")).thenReturn(true);
+        when(accountRepository.existsByUserIdAndBank(1, "HDFC")).thenReturn(true);
+
+        Optional<User> result = userService.getUserByEmailAndPassword("test@example.com", "raw", "HDFC");
+        assertTrue(result.isPresent());
+    }
+
+    @Test
+    void getUserByEmailAndPassword_fail() {
+        when(userRepository.findByEmail("wrong@example.com")).thenReturn(Optional.empty());
+        Optional<User> result = userService.getUserByEmailAndPassword("wrong@example.com", "raw", "HDFC");
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void setUserMpin() {
+        User user = new User();
+        user.setEmail("test@example.com");
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("123456")).thenReturn("encoded");
+
+        ResponseEntity<Map<String, Object>> response = userService.setUserMpin("test@example.com", "123456");
+
+        assertTrue((Boolean) response.getBody().get("success"));
+    }
+
+    @Test
+    void updateUserMpin_success() {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setMpin("existing");
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("654321")).thenReturn("encoded");
+
+        ResponseEntity<Map<String, Object>> response = userService.updateUserMpin("test@example.com", "654321");
+
+        assertEquals("MPIN updated successfully", response.getBody().get("message"));
+    }
+
+    @Test
+    void verifyMpin_success() {
+        User user = new User();
+        user.setMpin("encoded");
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("123456", "encoded")).thenReturn(true);
+
+        ResponseEntity<Map<String, Object>> response = userService.verifyMpin("test@example.com", "123456");
+
+        assertEquals("Verification successful", response.getBody().get("message"));
+    }
+
+    @Test
+    void verifyMpinOtp_success() {
+        User user = new User();
+        user.setMpin("encoded");
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("123456", "encoded")).thenReturn(true);
+        when(otpProvider.validateOtp("test@example.com", "999999")).thenReturn(true);
+
+        ResponseEntity<Map<String, Object>> response = userService.verifyMpinOtp("test@example.com", "999999", "123456");
+
+        assertEquals("Verification successful", response.getBody().get("message"));
+    }
+}

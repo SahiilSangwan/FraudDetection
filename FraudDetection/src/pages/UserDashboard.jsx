@@ -9,9 +9,9 @@ const Dashboard = () => {
   const bank =localStorage.getItem('bank') || "default";
 
   const bankLogos = {
-    sbi: assets?.sbi,
-    hdfc: assets?.hdfc,
-    icici: assets?.icici,
+    finova: assets?.finova,
+    wissen: assets?.wissen,
+    heritage: assets?.heritage,
   };
 
   const {account, getUserAccount, transactions, getUserTransacions, getBankTheme} = useContext(UserContext);

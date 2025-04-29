@@ -1,0 +1,571 @@
+//package com.secure.services;
+//
+//import com.secure.exception.CustomException;
+//import com.secure.model.*;
+//import com.secure.repository.*;
+//import com.secure.utils.EmailProvider;
+//import com.secure.utils.TemplateProvider;
+//import org.junit.jupiter.api.BeforeEach;
+//import org.junit.jupiter.api.Test;
+//import org.junit.jupiter.api.extension.ExtendWith;
+//import org.mockito.*;
+//import org.mockito.junit.jupiter.MockitoExtension;
+//
+//import java.math.BigDecimal;
+//import java.time.LocalDateTime;
+//import java.util.*;
+//
+//import static org.junit.jupiter.api.Assertions.*;
+//import static org.mockito.Mockito.*;
+//
+//@ExtendWith(MockitoExtension.class)
+//class BeneficiaryServiceTest {
+//
+//    @InjectMocks
+//    private BeneficiaryService beneficiaryService;
+//
+//    @Mock
+//    private AccountRepository accountRepository;
+//
+//    @Mock
+//    private BeneficiaryRepository beneficiaryRepository;
+//
+//    @Mock
+//    private UserRepository userRepository;
+//
+//    @Mock
+//    private EmailProvider emailProvider;
+//
+//    @Mock
+//    private TemplateProvider templateProvider;
+//
+//    @BeforeEach
+//    void setUp() {
+//        MockitoAnnotations.openMocks(this);
+//        beneficiaryService = new BeneficiaryService(accountRepository, beneficiaryRepository, userRepository, emailProvider, templateProvider);
+//    }
+//
+//    @Test
+//    void addBeneficiary_success() {
+//        Integer userId = 1;
+//        String userBank = "BankA";
+//        String accountNumber = "123456";
+//        String ifscCode = "BANK0001";
+//        BigDecimal amount = new BigDecimal("5000");
+//        String name = "John";
+//
+//        Account account = new Account();
+//        account.setAccountNumber(accountNumber);
+//        account.setIfscCode(ifscCode);
+//        account.setUserId(2);
+//        account.setBank("BankB");
+//
+//        User user = new User();
+//        user.setUserId(2);
+//
+//        when(beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(userId, accountNumber)).thenReturn(Optional.empty());
+//        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+//        when(userRepository.findById(2)).thenReturn(Optional.of(user));
+//        when(userRepository.getById(userId)).thenReturn(new User() {{ setEmail("user@example.com"); }});
+//        when(templateProvider.buildBeneficiaryAddedEmail(any(), any())).thenReturn("Email Body");
+//        doNothing().when(emailProvider).sendEmail(any(), any(), any());
+//
+//        Map<String, Object> response = beneficiaryService.addBeneficiary(userId, userBank, accountNumber, ifscCode, amount, name);
+//
+//        assertTrue((Boolean) response.get("success"));
+//        assertEquals("Successfully added beneficiary", response.get("message"));
+//        verify(beneficiaryRepository, times(1)).save(any(Beneficiary.class));
+//    }
+//
+//
+//    @Test
+//    void deleteBeneficiary_success() {
+//        Integer userId = 1;
+//        Integer beneficiaryId = 2;
+//        Beneficiary beneficiary = new Beneficiary();
+//        beneficiary.setUserId(userId);
+//
+//        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+//
+//        beneficiaryService.deleteBeneficiary(userId, beneficiaryId);
+//
+//        verify(beneficiaryRepository, times(1)).delete(beneficiary);
+//    }
+//
+//
+//    @Test
+//    void updateBeneficiaryAmount_success() {
+//        Integer userId = 1;
+//        Integer beneficiaryId = 2;
+//        BigDecimal newAmount = new BigDecimal("7000");
+//
+//        Beneficiary beneficiary = new Beneficiary();
+//        beneficiary.setUserId(userId);
+//        beneficiary.setAmount(new BigDecimal("5000"));
+//
+//        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+//        when(userRepository.getById(userId)).thenReturn(new User() {{ setEmail("user@example.com"); }});
+//        when(templateProvider.buildTransferLimitUpdatedEmail(any(), any())).thenReturn("Email Body");
+//        doNothing().when(emailProvider).sendEmail(any(), any(), any());
+//        when(beneficiaryRepository.save(any())).thenReturn(beneficiary);
+//
+//        Beneficiary result = beneficiaryService.updateBeneficiaryAmount(userId, beneficiaryId, newAmount);
+//
+//        assertEquals(newAmount, result.getAmount());
+//        verify(emailProvider, times(1)).sendEmail(any(), any(), any());
+//    }
+//
+//    @Test
+//    void getBeneficiaries_sameBank() {
+//        Integer userId = 1;
+//        String userBank = "BankA";
+//
+//        when(beneficiaryRepository.findByUserIdAndBeneficiaryBank(userId, userBank)).thenReturn(Collections.emptyList());
+//
+//        List<Beneficiary> result = beneficiaryService.getBeneficiaries(userId, userBank, true);
+//
+//        assertNotNull(result);
+//    }
+//
+//    @Test
+//    void getBeneficiaries_differentBank() {
+//        Integer userId = 1;
+//        String userBank = "BankA";
+//
+//        when(beneficiaryRepository.findByUserIdAndBeneficiaryBankNot(userId, userBank)).thenReturn(Collections.emptyList());
+//
+//        List<Beneficiary> result = beneficiaryService.getBeneficiaries(userId, userBank, false);
+//
+//        assertNotNull(result);
+//    }
+//
+//
+//    @Test
+//    void getBeneficiariesForTransaction_sameBank() {
+//        Integer userId = 1;
+//        String userBank = "BankA";
+//
+//        when(beneficiaryRepository.findByUserIdAndBeneficiaryBankAndUpdatedAtLessThanEqual(any(), any(), any()))
+//                .thenReturn(Collections.emptyList());
+//
+//        List<Beneficiary> result = beneficiaryService.getBeneficiariesForTransaction(userId, userBank, true);
+//
+//        assertNotNull(result);
+//    }
+//
+//    @Test
+//    void getBeneficiariesForTransaction_differentBank() {
+//        Integer userId = 1;
+//        String userBank = "BankA";
+//
+//        when(beneficiaryRepository.findByUserIdAndBeneficiaryBankNotAndUpdatedAtLessThanEqual(any(), any(), any()))
+//                .thenReturn(Collections.emptyList());
+//
+//        List<Beneficiary> result = beneficiaryService.getBeneficiariesForTransaction(userId, userBank, false);
+//
+//        assertNotNull(result);
+//    }
+//
+//
+//    @Test
+//    void compareBeneficiary_success() {
+//        Integer userId = 1;
+//        Integer beneficiaryId = 2;
+//        String userBank = "BankA";
+//
+//        Beneficiary beneficiary = new Beneficiary();
+//        beneficiary.setUserId(userId);
+//        beneficiary.setBeneficiaryUserId(3);
+//        beneficiary.setBeneficiaryBank("BankB");
+//
+//        Account userAccount = new Account();
+//        userAccount.setIfscCode("IFSC123");
+//        userAccount.setAccountNumber("1111");
+//
+//        Account beneficiaryAccount = new Account();
+//        beneficiaryAccount.setIfscCode("IFSC456");
+//        beneficiaryAccount.setAccountNumber("2222");
+//
+//        User user = new User();
+//        user.setFirstName("John");
+//        user.setLastName("Doe");
+//
+//        User beneficiaryUser = new User();
+//        beneficiaryUser.setFirstName("Jane");
+//        beneficiaryUser.setLastName("Smith");
+//
+//        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+//        when(accountRepository.findByUserIdAndBank(userId, userBank)).thenReturn(List.of(userAccount));
+//        when(accountRepository.findByUserIdAndBank(3, "BankB")).thenReturn(List.of(beneficiaryAccount));
+//        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+//        when(userRepository.findById(3)).thenReturn(Optional.of(beneficiaryUser));
+//
+//        Map<String, Object> result = beneficiaryService.compareBeneficiary(userId, beneficiaryId, userBank);
+//
+//        assertTrue((Boolean) result.get("success"));
+//        assertNotNull(result.get("data"));
+//    }
+//}
+//
+
+
+
+package com.secure.services;
+
+import com.secure.exception.CustomException;
+import com.secure.model.*;
+import com.secure.repository.*;
+import com.secure.utils.EmailProvider;
+import com.secure.utils.TemplateProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+
+@ExtendWith(MockitoExtension.class)
+class BeneficiaryServiceTest {
+
+    @InjectMocks
+    private BeneficiaryService beneficiaryService;
+
+    @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
+    private BeneficiaryRepository beneficiaryRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private EmailProvider emailProvider;
+
+    @Mock
+    private TemplateProvider templateProvider;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    // ------------------ addBeneficiary Tests ------------------
+
+    @Test
+    void addBeneficiary_success() {
+        Integer userId = 1;
+        String userBank = "BankA";
+        String accountNumber = "123456";
+        String ifscCode = "BANK0001";
+        BigDecimal amount = new BigDecimal("5000");
+        String name = "John";
+
+        Account account = new Account();
+        account.setAccountNumber(accountNumber);
+        account.setIfscCode(ifscCode);
+        account.setUserId(2);
+        account.setBank("BankB");
+
+        User beneficiaryUser = new User();
+        beneficiaryUser.setUserId(2);
+
+        User currentUser = new User();
+        currentUser.setEmail("user@example.com");
+
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(userId, accountNumber)).thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(userRepository.findById(2)).thenReturn(Optional.of(beneficiaryUser));
+        when(userRepository.getById(userId)).thenReturn(currentUser);
+        when(templateProvider.buildBeneficiaryAddedEmail(any(), any())).thenReturn("Email Body");
+        doNothing().when(emailProvider).sendEmail(any(), any(), any());
+
+        Map<String, Object> response = beneficiaryService.addBeneficiary(userId, userBank, accountNumber, ifscCode, amount, name);
+
+        assertTrue((Boolean) response.get("success"));
+        verify(beneficiaryRepository, times(1)).save(any(Beneficiary.class));
+    }
+
+    @Test
+    void addBeneficiary_beneficiaryAlreadyExists() {
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(anyInt(), anyString()))
+                .thenReturn(Optional.of(new Beneficiary()));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                beneficiaryService.addBeneficiary(1, "BankA", "123456", "BANK0001", BigDecimal.TEN, "John"));
+
+        assertEquals("Beneficiary already exists", ex.getMessage());
+    }
+
+    @Test
+    void addBeneficiary_accountDoesNotExist() {
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(anyInt(), anyString()))
+                .thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(anyString()))
+                .thenReturn(Optional.empty());
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                beneficiaryService.addBeneficiary(1, "BankA", "123456", "BANK0001", BigDecimal.TEN, "John"));
+
+        assertEquals("Account does not exist", ex.getMessage());
+    }
+
+    @Test
+    void addBeneficiary_ifscMismatch() {
+        Account account = new Account();
+        account.setAccountNumber("123456");
+        account.setIfscCode("OTHER_IFSC");
+        account.setUserId(2);
+        account.setBank("BankB");
+
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(anyInt(), anyString()))
+                .thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(anyString()))
+                .thenReturn(Optional.of(account));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                beneficiaryService.addBeneficiary(1, "BankA", "123456", "BANK0001", BigDecimal.TEN, "John"));
+
+        assertEquals("Account does not match IFSC code", ex.getMessage());
+    }
+
+    @Test
+    void addBeneficiary_userNotExist() {
+        Account account = new Account();
+        account.setAccountNumber("123456");
+        account.setIfscCode("BANK0001");
+        account.setUserId(2);
+        account.setBank("BankB");
+
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(anyInt(), anyString()))
+                .thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(anyString()))
+                .thenReturn(Optional.of(account));
+        when(userRepository.findById(anyInt()))
+                .thenReturn(Optional.empty());
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                beneficiaryService.addBeneficiary(1, "BankA", "123456", "BANK0001", BigDecimal.TEN, "John"));
+
+        assertEquals("User does not exist", ex.getMessage());
+    }
+
+    @Test
+    void addBeneficiary_selfBeneficiaryNotAllowed() {
+        Account account = new Account();
+        account.setAccountNumber("123456");
+        account.setIfscCode("BANK0001");
+        account.setUserId(1);
+        account.setBank("BankA");
+
+        User user = new User();
+        user.setUserId(1);
+
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(anyInt(), anyString()))
+                .thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(anyString()))
+                .thenReturn(Optional.of(account));
+        when(userRepository.findById(anyInt()))
+                .thenReturn(Optional.of(user));
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                beneficiaryService.addBeneficiary(1, "BankA", "123456", "BANK0001", BigDecimal.TEN, "John"));
+
+        assertTrue(ex.getMessage().contains("Cannot add the same person as beneficiary"));
+    }
+
+    // ------------------ deleteBeneficiary Tests ------------------
+
+    @Test
+    void deleteBeneficiary_success() {
+        Integer userId = 1;
+        Integer beneficiaryId = 2;
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setUserId(userId);
+
+        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+
+        beneficiaryService.deleteBeneficiary(userId, beneficiaryId);
+
+        verify(beneficiaryRepository, times(1)).delete(beneficiary);
+    }
+
+    @Test
+    void deleteBeneficiary_notFound() {
+        when(beneficiaryRepository.findById(anyInt()))
+                .thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                beneficiaryService.deleteBeneficiary(1, 2));
+
+        assertEquals("Beneficiary not found", ex.getMessage());
+    }
+
+    @Test
+    void deleteBeneficiary_unauthorized() {
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setUserId(2); // Different user ID
+
+        when(beneficiaryRepository.findById(anyInt()))
+                .thenReturn(Optional.of(beneficiary));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                beneficiaryService.deleteBeneficiary(1, 2));
+
+        assertEquals("Unauthorized: You cannot delete this beneficiary", ex.getMessage());
+    }
+
+    // ------------------ updateBeneficiaryAmount Tests ------------------
+
+    @Test
+    void updateBeneficiaryAmount_success() {
+        Integer userId = 1;
+        Integer beneficiaryId = 2;
+        BigDecimal newAmount = new BigDecimal("7000");
+
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setUserId(userId);
+        beneficiary.setAmount(new BigDecimal("5000"));
+
+        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+        when(userRepository.getById(userId)).thenReturn(new User() {{ setEmail("user@example.com"); }});
+        when(templateProvider.buildTransferLimitUpdatedEmail(any(), any())).thenReturn("Email Body");
+        doNothing().when(emailProvider).sendEmail(any(), any(), any());
+        when(beneficiaryRepository.save(any())).thenReturn(beneficiary);
+
+        Beneficiary result = beneficiaryService.updateBeneficiaryAmount(userId, beneficiaryId, newAmount);
+
+        assertEquals(newAmount, result.getAmount());
+    }
+
+    @Test
+    void updateBeneficiaryAmount_notFound() {
+        when(beneficiaryRepository.findById(anyInt())).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                beneficiaryService.updateBeneficiaryAmount(1, 2, BigDecimal.TEN));
+
+        assertEquals("Beneficiary not found", ex.getMessage());
+    }
+
+    @Test
+    void updateBeneficiaryAmount_unauthorized() {
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setUserId(2); // Different user ID
+
+        when(beneficiaryRepository.findById(anyInt())).thenReturn(Optional.of(beneficiary));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                beneficiaryService.updateBeneficiaryAmount(1, 2, BigDecimal.TEN));
+
+        assertEquals("Unauthorized: You cannot update this beneficiary", ex.getMessage());
+    }
+
+    // ------------------ getBeneficiaries Tests ------------------
+
+    @Test
+    void getBeneficiaries_sameBank() {
+        Integer userId = 1;
+        String userBank = "BankA";
+
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryBank(userId, userBank))
+                .thenReturn(Collections.emptyList());
+
+        List<Beneficiary> result = beneficiaryService.getBeneficiaries(userId, userBank, true);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void getBeneficiaries_differentBank() {
+        Integer userId = 1;
+        String userBank = "BankA";
+
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryBankNot(userId, userBank))
+                .thenReturn(Collections.emptyList());
+
+        List<Beneficiary> result = beneficiaryService.getBeneficiaries(userId, userBank, false);
+
+        assertNotNull(result);
+    }
+
+    // ------------------ getBeneficiariesForTransaction Tests ------------------
+
+    @Test
+    void getBeneficiariesForTransaction_sameBank() {
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryBankAndUpdatedAtLessThanEqual(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        List<Beneficiary> result = beneficiaryService.getBeneficiariesForTransaction(1, "BankA", true);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void getBeneficiariesForTransaction_differentBank() {
+        when(beneficiaryRepository.findByUserIdAndBeneficiaryBankNotAndUpdatedAtLessThanEqual(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        List<Beneficiary> result = beneficiaryService.getBeneficiariesForTransaction(1, "BankA", false);
+
+        assertNotNull(result);
+    }
+
+    // ------------------ compareBeneficiary Tests ------------------
+
+    @Test
+    void compareBeneficiary_success() {
+        Integer userId = 1;
+        Integer beneficiaryId = 2;
+        String userBank = "BankA";
+
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setUserId(userId);
+        beneficiary.setBeneficiaryUserId(3);
+        beneficiary.setBeneficiaryBank("BankB");
+
+        Account userAccount = new Account();
+        userAccount.setIfscCode("IFSC123");
+        userAccount.setAccountNumber("1111");
+
+        Account beneficiaryAccount = new Account();
+        beneficiaryAccount.setIfscCode("IFSC456");
+        beneficiaryAccount.setAccountNumber("2222");
+
+        User user = new User();
+        user.setFirstName("John");
+        user.setLastName("Doe");
+
+        User beneficiaryUser = new User();
+        beneficiaryUser.setFirstName("Jane");
+        beneficiaryUser.setLastName("Smith");
+
+        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+        when(accountRepository.findByUserIdAndBank(userId, userBank)).thenReturn(List.of(userAccount));
+        when(accountRepository.findByUserIdAndBank(3, "BankB")).thenReturn(List.of(beneficiaryAccount));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findById(3)).thenReturn(Optional.of(beneficiaryUser));
+
+        Map<String, Object> result = beneficiaryService.compareBeneficiary(userId, beneficiaryId, userBank);
+
+        assertTrue((Boolean) result.get("success"));
+        assertNotNull(result.get("data"));
+    }
+
+    @Test
+    void compareBeneficiary_beneficiaryNotFound() {
+        when(beneficiaryRepository.findById(anyInt())).thenReturn(Optional.empty());
+
+        CustomException ex = assertThrows(CustomException.class, () ->
+                beneficiaryService.compareBeneficiary(1, 2, "BankA"));
+
+        assertEquals("Beneficiary not found", ex.getMessage());
+    }
+}

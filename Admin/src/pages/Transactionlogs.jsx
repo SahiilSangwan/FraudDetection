@@ -71,9 +71,9 @@ const TransactionLogsPage = () => {
               onChange={(e) => setBankFilter(e.target.value)}
             >
               <option value="all">All Banks</option>
-              <option value="HDFC">HDFC</option>
-              <option value="ICICI">ICICI</option>
-              <option value="SBI">SBI</option>
+              <option value="WISSEN">WISSEN</option>
+              <option value="HERITAGE">HERITAGE</option>
+              <option value="FINOVA">FINOVA</option>
             </select>
           </div>
           
@@ -133,8 +133,8 @@ const TransactionLogsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${txn.senderBank === 'HDFC' ? 'bg-blue-100 text-blue-800' : 
-                          txn.senderBank === 'ICICI' ? 'bg-purple-100 text-purple-800' : 
+                        ${txn.senderBank === 'WISSEN' ? 'bg-blue-100 text-blue-800' : 
+                          txn.senderBank === 'HERITAGE' ? 'bg-purple-100 text-purple-800' : 
                           'bg-green-100 text-green-800'}`}>
                         {txn.senderBank}
                       </span>

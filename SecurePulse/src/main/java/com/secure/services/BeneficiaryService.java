@@ -9,32 +9,51 @@ import com.secure.repository.AccountRepository;
 import com.secure.repository.BeneficiaryRepository;
 import com.secure.repository.UserRepository;
 import com.secure.utils.EmailProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.secure.utils.TemplateProvider;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.*;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Service layer for managing beneficiaries, including creation, deletion,
+ * updates, and data retrieval related to transfer validations.
+ */
 @Service
 public class BeneficiaryService {
 
-    @Autowired
-    private EmailProvider emailProvider;
-
+    private final EmailProvider emailProvider;
     private final AccountRepository accountRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final UserRepository userRepository;
+    private final TemplateProvider templateProvider;
 
-    public BeneficiaryService(AccountRepository accountRepository, BeneficiaryRepository beneficiaryRepository, UserRepository userRepository) {
+    public BeneficiaryService(AccountRepository accountRepository, BeneficiaryRepository beneficiaryRepository, UserRepository userRepository,
+                              EmailProvider emailProvider, TemplateProvider templateProvider) {
         this.accountRepository = accountRepository;
         this.beneficiaryRepository = beneficiaryRepository;
         this.userRepository = userRepository;
+        this.emailProvider = emailProvider;
+        this.templateProvider = templateProvider;
     }
 
+    /**
+     * Adds a new beneficiary to a user's account after validating account details and IFSC.
+     * Sends a confirmation email after successful addition.
+     *
+     * @param userId        the ID of the user adding the beneficiary
+     * @param userBank      the bank of the user
+     * @param accountNumber the account number of the beneficiary
+     * @param ifscCode      the IFSC code of the beneficiary's account
+     * @param amount        the transfer limit for the beneficiary
+     * @param name          the name of the beneficiary
+     * @return response map containing success flag, beneficiary data, and a message
+     */
     public Map<String, Object> addBeneficiary(Integer userId, String userBank, String accountNumber, String ifscCode, BigDecimal amount, String name) {
         Map<String, Object> response = new HashMap<>();
+
         Optional<Beneficiary> existingBeneficiary = beneficiaryRepository.findByUserIdAndBeneficiaryAccountNumber(userId, accountNumber);
         if (existingBeneficiary.isPresent()) {
             throw new CustomException("Beneficiary already exists");
@@ -81,67 +100,18 @@ public class BeneficiaryService {
         LocalDateTime activationTime = LocalDateTime.now().plusHours(1);
         String formattedTime = activationTime.format(DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy"));
 
-        String messageBody = "<!DOCTYPE html>" +
-                "<html>" +
-                "<head>" +
-                "    <style>" +
-                "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
-                "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
-                "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
-                "        .header h1 { color: #ffffff; margin: 0; }" +
-                "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
-                "        .content { padding: 30px; text-align: center; }" +
-                "        .success-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }" +
-                "        .details-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
-                "        .details-box p { margin: 8px 0; }" +
-                "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
-                "        .note { color: #e74c3c; font-size: 13px; margin-top: 20px; font-style: italic; }" +
-                "        .divider { border-top: 1px solid #eee; margin: 25px 0; }" +
-                "        .cooling-period { background: #fff8e1; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; }" +
-                "    </style>" +
-                "</head>" +
-                "<body>" +
-                "    <div class='container'>" +
-                "        <div class='header'>" +
-                "            <h1>SecurePulse</h1>" +
-                "            <p>by WISSEN Technology</p>" +
-                "        </div>" +
-                "        <div class='content'>" +
-                "            <div class='success-icon'>✓</div>" +
-                "            <h2 style='color: #2c3e50;'>Beneficiary Added Successfully</h2>" +
-                "            <p>Your new beneficiary has been registered and will be activated after the security cooling period.</p>" +
-                "            " +
-                "            <div class='details-box'>" +
-                "                <p><strong>Beneficiary Name:</strong> " + beneficiary.getBeneficiaryName() + "</p>" +
-                "                <p><strong>Account Number:</strong> " + beneficiary.getBeneficiaryAccountNumber() + "</p>" +
-                "                <p><strong>IFSC Code:</strong> " + beneficiary.getIfscCode() + "</p>" +
-                "                <p><strong>Transfer Limit:</strong> ₹" + beneficiary.getAmount() + "</p>" +
-                "            </div>" +
-                "            " +
-                "            <div class='cooling-period'>" +
-                "            <p><strong>⏳ Security Cooling Period:</strong> For your safety, transfers to this beneficiary will be enabled after <strong>1 hour</strong> (approx. " + formattedTime + ").</p>" +
-                "            </div>" +
-                "            " +
-                "            <div class='divider'></div>" +
-                "            " +
-                "            <div class='note'>" +
-                "                <p>If you did not authorize this action, please <a href='' style='color: #3498db;'>contact support</a> immediately.</p>" +
-                "            </div>" +
-                "        </div>" +
-                "        <div class='footer'>" +
-                "            <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
-                "            <p>123 Embassey Tech Park, Bengaluru | support@securepulse.com</p>" +
-                "        </div>" +
-                "    </div>" +
-                "</body>" +
-                "</html>";
-
+        String messageBody = templateProvider.buildBeneficiaryAddedEmail(beneficiary, formattedTime);
         emailProvider.sendEmail(emailUser, subject, messageBody);
 
         return response;
     }
 
-
+    /**
+     * Deletes a beneficiary only if it belongs to the user making the request.
+     *
+     * @param userId        the ID of the user
+     * @param beneficiaryId the ID of the beneficiary to delete
+     */
     public void deleteBeneficiary(Integer userId, Integer beneficiaryId) {
         Optional<Beneficiary> beneficiaryOptional = beneficiaryRepository.findById(beneficiaryId);
 
@@ -157,7 +127,14 @@ public class BeneficiaryService {
         beneficiaryRepository.delete(beneficiary);
     }
 
-    // ✅ Update Beneficiary Amount
+    /**
+     * Updates the transfer amount limit for a beneficiary and sends a notification email.
+     *
+     * @param userId        the ID of the user
+     * @param beneficiaryId the ID of the beneficiary
+     * @param newAmount     the new transfer limit
+     * @return updated Beneficiary object
+     */
     public Beneficiary updateBeneficiaryAmount(Integer userId, Integer beneficiaryId, BigDecimal newAmount) {
         Optional<Beneficiary> beneficiaryOptional = beneficiaryRepository.findById(beneficiaryId);
 
@@ -173,102 +150,62 @@ public class BeneficiaryService {
         beneficiary.setAmount(newAmount);
 
         String emailUser = userRepository.getById(userId).getEmail();
-
         String subject = "Beneficiary Transfer Limit Updated - SecurePulse";
 
         LocalDateTime activationTime = LocalDateTime.now().plusHours(1);
         String formattedTime = activationTime.format(DateTimeFormatter.ofPattern("hh:mm a, dd MMM yyyy"));
 
-        String messageBody = "<!DOCTYPE html>" +
-                "<html>" +
-                "<head>" +
-                "    <style>" +
-                "        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }" +
-                "        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }" +
-                "        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }" +
-                "        .header h1 { color: #ffffff; margin: 0; }" +
-                "        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }" +
-                "        .content { padding: 30px; text-align: center; }" +
-                "        .success-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }" +
-                "        .details-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: left; }" +
-                "        .details-box p { margin: 8px 0; }" +
-                "        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }" +
-                "        .note { color: #e74c3c; font-size: 13px; margin-top: 20px; font-style: italic; }" +
-                "        .divider { border-top: 1px solid #eee; margin: 25px 0; }" +
-                "        .cooling-period { background: #fff8e1; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; }" +
-                "        .changes { background: #e8f5e9; padding: 10px; border-left: 4px solid #4caf50; margin: 15px 0; }" +
-                "    </style>" +
-                "</head>" +
-                "<body>" +
-                "    <div class='container'>" +
-                "        <div class='header'>" +
-                "            <h1>SecurePulse</h1>" +
-                "            <p>by WISSEN Technology</p>" +
-                "        </div>" +
-                "        <div class='content'>" +
-                "            <div class='success-icon'>✓</div>" +
-                "            <h2 style='color: #2c3e50;'>Transfer Limit Updated Successfully</h2>" +
-                "            <p>The transfer limit for your beneficiary has been updated and will be activated after the security cooling period.</p>" +
-                "            " +
-                "            <div class='details-box'>" +
-                "                <p><strong>Beneficiary Name:</strong> " + beneficiary.getBeneficiaryName() + "</p>" +
-                "                <p><strong>Account Number:</strong> " + beneficiary.getBeneficiaryAccountNumber() + "</p>" +
-                "                <p><strong>IFSC Code:</strong> " + beneficiary.getIfscCode() + "</p>" +
-                "            </div>" +
-                "            " +
-                "            <div class='changes'>" +
-                "                <p><strong>New Transfer Limit:</strong> ₹" + beneficiary.getAmount() + "</p>" +
-                "            </div>" +
-                "            " +
-                "            <div class='cooling-period'>" +
-                "                <p><strong>⏳ Security Cooling Period:</strong> The updated limit will be effective after <strong>1 hour</strong> (approx. " + formattedTime + ").</p>" +
-                "            </div>" +
-                "            " +
-                "            <div class='divider'></div>" +
-                "            " +
-                "            <div class='note'>" +
-                "                <p>If you did not authorize this change, please <a href='' style='color: #3498db;'>contact support</a> immediately.</p>" +
-                "            </div>" +
-                "        </div>" +
-                "        <div class='footer'>" +
-                "            <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>" +
-                "            <p>123 Embassey Tech Park, Bengaluru | support@securepulse.com</p>" +
-                "        </div>" +
-                "    </div>" +
-                "</body>" +
-                "</html>";
-
-            emailProvider.sendEmail(emailUser, subject, messageBody);
+        String messageBody = templateProvider.buildTransferLimitUpdatedEmail(beneficiary, formattedTime);
+        emailProvider.sendEmail(emailUser, subject, messageBody);
 
         return beneficiaryRepository.save(beneficiary);
     }
 
+    /**
+     * Fetches beneficiaries based on bank relation (same or different bank).
+     *
+     * @param userId   the ID of the user
+     * @param userBank the bank of the user
+     * @param sameBank whether to fetch from the same bank or not
+     * @return list of beneficiaries
+     */
     public List<Beneficiary> getBeneficiaries(Integer userId, String userBank, boolean sameBank) {
         if (sameBank) {
-            // ✅ Fetch beneficiaries from the same bank
             return beneficiaryRepository.findByUserIdAndBeneficiaryBank(userId, userBank);
         } else {
-            // ✅ Fetch beneficiaries from a different bank
             return beneficiaryRepository.findByUserIdAndBeneficiaryBankNot(userId, userBank);
         }
     }
 
-
+    /**
+     * Retrieves beneficiaries eligible for transactions (added/updated more than an hour ago).
+     *
+     * @param userId   the ID of the user
+     * @param userBank the user's bank
+     * @param same     whether the beneficiary is from the same bank
+     * @return list of valid beneficiaries
+     */
     public List<Beneficiary> getBeneficiariesForTransaction(Integer userId, String userBank, boolean same) {
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
 
         if (same) {
-            // Fetch beneficiaries from the same bank
             return beneficiaryRepository.findByUserIdAndBeneficiaryBankAndUpdatedAtLessThanEqual(userId, userBank, oneHourAgo);
         } else {
-            // Fetch beneficiaries from different banks
             return beneficiaryRepository.findByUserIdAndBeneficiaryBankNotAndUpdatedAtLessThanEqual(userId, userBank, oneHourAgo);
         }
     }
+
+    /**
+     * Compares user and beneficiary details for validation or UI display.
+     *
+     * @param userId        the user ID
+     * @param beneficiaryId the beneficiary ID
+     * @param userBank      the bank of the user
+     * @return map containing success flag and comparison data
+     */
     public Map<String, Object> compareBeneficiary(Integer userId, Integer beneficiaryId, String userBank) {
         try {
             Optional<Beneficiary> beneficiaryOptional = beneficiaryRepository.findById(beneficiaryId);
-
             if (beneficiaryOptional.isEmpty()) {
                 throw new CustomException("Beneficiary not found");
             }
@@ -306,7 +243,7 @@ public class BeneficiaryService {
                     "data", compare
             );
         } catch (CustomException e) {
-            throw e; // Let the global exception handler handle this
+            throw e;
         } catch (Exception e) {
             throw new CustomException("An error occurred while comparing the beneficiary");
         }

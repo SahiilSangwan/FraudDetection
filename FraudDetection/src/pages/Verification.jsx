@@ -20,9 +20,9 @@ const Verification = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const bankLogos = {
-    sbi: assets?.sbi,
-    hdfc: assets?.hdfc,
-    icici: assets?.icici,
+    finova: assets?.finova,
+    wissen: assets?.wissen,
+    heritage: assets?.heritage,
   };
 
   const sendOtp = async () => {

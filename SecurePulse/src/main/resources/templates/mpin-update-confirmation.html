@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; }
+        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }
+        .content { padding: 30px; text-align: center; }
+        .success-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }
+        .details-box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: left; }
+        .details-box p { margin: 10px 0; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }
+        .security-note { background: #fff8e1; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>SecurePulse</h1>
+        <p>by WISSEN Technology</p>
+    </div>
+    <div class="content">
+        <div class="success-icon">✓</div>
+        <h2 style="color: #2c3e50;">MPIN Update Confirmation</h2>
+
+        <div class="details-box">
+            <p><strong>Status:</strong> <span style="color: #2ecc71;">Successfully Changed</span></p>
+            <p><strong>Changed On:</strong> <span th:text="${changedOn}">[Timestamp]</span></p>
+        </div>
+
+        <div class="security-note">
+            <p><strong>Important Security Note:</strong></p>
+            <ul style="margin-top: 5px; padding-left: 20px;">
+                <li>Never share your MPIN with anyone</li>
+                <li>Change your MPIN regularly for security</li>
+                <li>Contact support immediately if you didn't make this change</li>
+            </ul>
+        </div>
+
+        <p style="font-size: 13px; color: #7f8c8d;">This is an automated confirmation. No reply is needed.</p>
+    </div>
+    <div class="footer">
+        <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>
+        <p>24/7 Security Helpline: +91 9876543210 | security@securepulse.com</p>
+    </div>
+</div>
+</body>
+</html>

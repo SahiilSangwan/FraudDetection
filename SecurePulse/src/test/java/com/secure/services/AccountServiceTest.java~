@@ -1,0 +1,71 @@
+package com.secure.services;
+
+import com.secure.model.Account;
+import com.secure.repository.AccountRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+
+@ExtendWith(MockitoExtension.class)
+class AccountServiceTest {
+
+    @InjectMocks
+    private AccountService accountService;
+
+    @Mock
+    private AccountRepository accountRepository;
+
+
+    @Test
+    void getAccountsByUserId() {
+         //Mock the behavior of accountRepository
+         when(accountRepository.findByUserId(1)).thenReturn(List.of(new Account()));
+
+         //Call the method to test
+         List<Account> accounts = accountService.getAccountsByUserId(1);
+
+         //Verify the result
+         assertNotNull(accounts);
+         assertFalse(accounts.isEmpty());
+    }
+
+    @Test
+    void getAccountByNumber() {
+        //Mock the behavior of accountRepository
+        when(accountRepository.findByAccountNumber("123456")).thenReturn(java.util.Optional.of(new Account()));
+
+        //Call the method to test
+        java.util.Optional<Account> account = accountService.getAccountByNumber("123456");
+
+        //Verify the result
+        assertTrue(account.isPresent());
+    }
+
+    @Test
+    void getAccountsByBank() {
+    }
+
+    @Test
+    void getActiveAccountsByUserId() {
+    }
+
+    @Test
+    void getAccountsByUserIdAndBank() {
+    }
+
+    @Test
+    void saveAccount() {
+    }
+
+    @Test
+    void deleteAccount() {
+    }
+}

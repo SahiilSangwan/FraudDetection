@@ -10,11 +10,11 @@ const Header = () => {
 
   const bank = localStorage.getItem('bank') || "default";
 
-    const bankLogos = {
-      sbi: assets?.sbi,
-      hdfc: assets?.hdfc,
-      icici: assets?.icici,
-    };
+  const bankLogos = {
+    finova: assets?.finova,
+    wissen: assets?.wissen,
+    heritage: assets?.heritage,
+  };
 
   const {uToken, setUToken, logoutuser} = useContext(UserContext);
   const {vToken, setVToken,getBankTheme} = useContext(UserContext);

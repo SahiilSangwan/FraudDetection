@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .header { background-color: #2c3e50; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; }
+        .header p { color: #ecf0f1; margin: 5px 0 0; font-size: 14px; }
+        .content { padding: 30px; text-align: center; }
+        .credit-icon { color: #2ecc71; font-size: 48px; margin-bottom: 20px; }
+        .details-box { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: left; }
+        .details-box p { margin: 10px 0; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #7f8c8d; }
+        .button { background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }
+        .divider { border-top: 1px solid #eee; margin: 25px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>SecurePulse</h1>
+        <p>by WISSEN Technology</p>
+    </div>
+    <div class="content">
+        <div class="credit-icon">↑</div>
+        <h2 style="color: #2c3e50;">Payment Received</h2>
+
+        <div class="details-box">
+            <p><strong>Amount Credited:</strong> <span style="color: #2ecc71;">+₹<span th:text="${amount}">[Amount]</span></span></p>
+            <p><strong>Date & Time:</strong> <span th:text="${dateTime}">[Time]</span></p>
+            <p><strong>Available Balance:</strong> ₹<span th:text="${balance}">[Balance]</span></p>
+            <p><strong>Transaction ID:</strong> <span th:text="${transactionId}">[Txn ID]</span></p>
+            <p><strong>Sender:</strong> <span th:text="${senderName}">[Sender Name]</span></p>
+            <p><strong>Reference:</strong> <span th:text="${description}">[Reference]</span></p>
+        </div>
+
+        <p>This amount is now available in your account.</p>
+
+        <div class="divider"></div>
+
+        <a href="https://securepulse.com/transactions" class="button">View Transaction History</a>
+
+        <p style="font-size: 13px; color: #7f8c8d;">Thank you for using SecurePulse services.</p>
+    </div>
+    <div class="footer">
+        <p>© 2023 SecurePulse by WISSEN Technology. All rights reserved.</p>
+        <p>123 Tech Park, Innovation City | support@securepulse.com</p>
+    </div>
+</div>
+</body>
+</html>

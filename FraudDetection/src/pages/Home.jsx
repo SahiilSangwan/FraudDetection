@@ -11,9 +11,9 @@ const Home = () => {
   };
 
   const banks = [
-    { name: 'SBI', logo: assets?.sbi || 'fallback-image.png' },
-    { name: 'HDFC', logo: assets?.hdfc || 'fallback-image.png' },
-    { name: 'ICICI', logo: assets?.icici || 'fallback-image.png' }
+    { name: 'FINOVA', logo: assets?.finova || 'fallback-image.png' },
+    { name: 'WISSEN', logo: assets?.wissen || 'fallback-image.png' },
+    { name: 'HERITAGE', logo: assets?.heritage || 'fallback-image.png' }
   ];
 
   return (

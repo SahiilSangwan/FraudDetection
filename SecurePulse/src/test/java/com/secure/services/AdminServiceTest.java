@@ -1,0 +1,626 @@
+package com.secure.services;
+
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.secure.exception.CustomException;
+import com.secure.model.*;
+import com.secure.repository.*;
+import com.secure.utils.EmailProvider;
+import com.secure.utils.JwtProvider;
+import com.secure.utils.TemplateProvider;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+
+@ExtendWith(MockitoExtension.class)
+class AdminServiceTest {
+
+    @InjectMocks
+    private AdminService adminService;
+    @Mock
+    private  EmailProvider emailProvider;
+    @Mock
+    private  AccountRepository accountRepository;
+    @Mock
+    private  TransactionRepository transactionRepository;
+    @Mock
+    private  AdminRepository adminRepository;
+    @Mock
+    private  BlockedUserRepository blockedUserRepository;
+    @Mock
+    private  JwtProvider jwtProvider;
+    @Mock
+    private  TransactionService transactionService;
+    @Mock
+    private  UserRepository userRepository;
+    @Mock
+    private  BCryptPasswordEncoder passwordEncoder;
+    @Mock
+    private  TemplateProvider templateProvider;
+
+    @Test
+    void authenticateAdmin() {
+        // Initialize test data
+        String email = "test@example.com", password = "test1234";
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        Admin admin = new Admin();
+        admin.setEmail("test@example.com");
+        admin.setAdminId(1);
+        admin.setPassword("hiddenPassword"); // Assuming this is the password in the database
+        List<BlockedUser> list = new ArrayList<>();
+
+        // Mocking all dependencies
+        when(adminRepository.findByEmail(email)).thenReturn(Optional.of(admin));
+        when(passwordEncoder.matches(eq(password), anyString())).thenReturn(true);
+        when(jwtProvider.generateAdminToken(admin)).thenReturn("token");
+        when(templateProvider.buildAdminLoginSuccessEmail(anyString())).thenReturn("Test Email");
+        doNothing().when(emailProvider).sendEmail(eq(email), anyString(), anyString());
+        when(blockedUserRepository.findAll(Sort.by("createdAt").descending())).thenReturn(list);
+
+
+        // Run the method being tested
+        ResponseEntity<Map<String, Object>> result = adminService.authenticateAdmin(email, password, response);
+
+        // Assertions
+        assertEquals(200, result.getStatusCodeValue());
+        assertEquals("token", result.getBody().get("token"));
+        assertEquals(true, result.getBody().get("success"));
+    }
+
+
+
+
+    @Test
+    void verifyMpin() {
+        Admin admin = new Admin();
+        String email="test@example.com";
+        String mpin="1234";
+        admin.setEmail(email);
+        admin.setMpin(mpin);
+        String token="test-token";
+        DecodedJWT decodedJWT = mock(DecodedJWT.class);
+        when(jwtProvider.extractClaims(token)).thenReturn(decodedJWT);
+        when(decodedJWT.getSubject()).thenReturn(email);
+        when(adminRepository.findByEmail(email)).thenReturn(Optional.of(admin));
+        when(passwordEncoder.matches(mpin, admin.getMpin())).thenReturn(true);
+        ResponseEntity<Map<String,Object>> response = adminService.verifyMpin(email, mpin, token);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(true, response.getBody().get("success"));
+    }
+
+    @Test
+    void getTransactionStatsByBank() {
+        List<Transaction> transactions = new ArrayList<>();
+        when(transactionRepository.findAll()).thenReturn(transactions);
+        List<Map<String, Object>> result= adminService.getTransactionStatsByBank();
+        assertNotNull(result);
+    }
+
+
+    @Test
+    void getFraudTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        when(transactionRepository.findByMarked(Transaction.TransactionMarked.FRAUD)).thenReturn(transactions);
+        List<Map<String, Object>> result= adminService.getFraudTransactions();
+        assertNotNull(result);
+    }
+
+    @Test
+    void getSuspiciousTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        when(transactionRepository.findByMarked(Transaction.TransactionMarked.SUSPICIOUS)).thenReturn(transactions);
+        List<Map<String, Object>> result= adminService.getSuspiciousTransactions();
+        assertNotNull(result);
+    }
+
+
+    @Test
+    void getRecentBankTransactions() {
+        String bankName = "testBank";
+        List<Transaction> transactions = new ArrayList<>();
+        when(transactionRepository.findRecentByBank(bankName, PageRequest.of(0, 10))).thenReturn(transactions);
+
+        List<Map<String, Object>> result = adminService.getRecentBankTransactions(bankName);
+
+        assertNotNull(result);
+        verify(transactionRepository).findRecentByBank(bankName, PageRequest.of(0, 10));
+    }
+
+
+    @Test
+    void getAllBankTransactions() {
+        String bankName= "testBank";
+
+        when(transactionRepository
+                .findRecentByBank(bankName, PageRequest.of(0, 150))).thenReturn(new ArrayList<>());
+        List<Map<String, Object>> result = adminService.getAllBankTransactions(bankName);
+        assertNotNull(result);
+    }
+
+    @Test
+    void updateMpin() {
+        String email="test@example.com";
+        String mpin="1234";
+        Admin admin = new Admin();
+        admin.setEmail(email);
+        admin.setMpin(mpin);
+        when(adminRepository.findByEmail(email)).thenReturn(Optional.of(admin));
+        when(passwordEncoder.encode(mpin)).thenReturn("encoded");
+        when(templateProvider.buildMpinUpdateConfirmationEmail(anyString())).thenReturn("Test Email");
+        doNothing().when(emailProvider).sendEmail(eq(email), anyString(), anyString());
+        ResponseEntity<Map<String,Object>> response = adminService.updateMpin(email, mpin);
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(true, response.getBody().get("success"));
+    }
+
+    @Test
+    void getLatestTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        transactions.add(new Transaction()); // Add a sample transaction if needed
+
+        // Mock the Page object
+        PageImpl<Transaction> page = new PageImpl<>(transactions);
+        when(transactionRepository.findAll(
+                PageRequest.of(0, 10, Sort.by("timestamp").descending())
+        )).thenReturn(page);
+
+        // Call the method under test
+        List<Map<String, Object>> result = adminService.getLatestTransactions();
+
+        // Assertions
+        assertNotNull(result);
+        assertEquals(transactions.size(), result.size());
+    }
+
+
+    @Test
+    void getAllLatestTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        transactions.add(new Transaction()); // Add a sample transaction if needed
+
+        // Mock the Page object
+        PageImpl<Transaction> page = new PageImpl<>(transactions);
+        when(transactionRepository.findAll(
+                PageRequest.of(0, 150, Sort.by("timestamp").descending())
+        )).thenReturn(page);
+
+        // Call the method under test
+        List<Map<String, Object>> result = adminService.getAllLatestTransactions();
+
+        // Assertions
+        assertNotNull(result);
+        assertEquals(transactions.size(), result.size());
+    }
+
+    @Test
+    void getTransactionDetails() {
+        // Test data setup
+        int id = 1;
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(id);
+        transaction.setAmountTransferred(new BigDecimal(1000));
+        transaction.setTimestamp(LocalDateTime.of(2023, 10, 1, 12, 0, 0));
+
+        transaction.setFlag(Transaction.TransactionFlag.COMPLETED);
+        transaction.setDescription("Payment for services");
+        transaction.setMarked(Transaction.TransactionMarked.NORMAL);
+        transaction.setSenderAccountNumber("1234567890");
+        transaction.setReceiverAccountNumber("0987654321");
+
+        Account senderAccount = new Account();
+        senderAccount.setAccountNumber("1234567890");
+        senderAccount.setIfscCode("SBI0001234");
+        senderAccount.setBank("State Bank of India");
+        senderAccount.setUserId(1);
+
+        Account receiverAccount = new Account();
+        receiverAccount.setAccountNumber("0987654321");
+        receiverAccount.setIfscCode("HDFC0005678");
+        receiverAccount.setBank("HDFC Bank");
+        receiverAccount.setUserId(2);
+
+        User senderUser = new User();
+        senderUser.setFirstName("John");
+        senderUser.setLastName("Doe");
+
+        User receiverUser = new User();
+        receiverUser.setFirstName("Jane");
+        receiverUser.setLastName("Smith");
+
+        // Mocking the repository calls
+        when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
+        when(accountRepository.findByAccountNumber(transaction.getSenderAccountNumber())).thenReturn(Optional.of(senderAccount));
+        when(accountRepository.findByAccountNumber(transaction.getReceiverAccountNumber())).thenReturn(Optional.of(receiverAccount));
+        when(userRepository.findById(senderAccount.getUserId())).thenReturn(Optional.of(senderUser));
+        when(userRepository.findById(receiverAccount.getUserId())).thenReturn(Optional.of(receiverUser));
+
+        // Calling the method under test
+        ResponseEntity<Object> response = adminService.getTransactionDetails(id);
+
+        // Assertions
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+
+        Map<String, Object> result = (Map<String, Object>) response.getBody();
+        assertNotNull(result);
+
+        // Assert transaction details
+        assertEquals(id, result.get("transactionId"));
+        assertEquals(new BigDecimal(1000), result.get("amountTransferred"));
+        assertEquals(LocalDateTime.of(2023, 10, 1, 12, 0, 0), result.get("timestamp"));
+        assertEquals("Payment for services", result.get("description"));
+
+
+        // Assert sender details
+        Map<String, Object> senderDetails = (Map<String, Object>) result.get("sender");
+        assertNotNull(senderDetails);
+        assertEquals("1234567890", senderDetails.get("accountNumber"));
+        assertEquals("SBI0001234", senderDetails.get("ifscCode"));
+        assertEquals("State Bank of India", senderDetails.get("bank"));
+        assertEquals("John", senderDetails.get("firstName"));
+        assertEquals("Doe", senderDetails.get("lastName"));
+
+        // Assert receiver details
+        Map<String, Object> receiverDetails = (Map<String, Object>) result.get("receiver");
+        assertNotNull(receiverDetails);
+        assertEquals("0987654321", receiverDetails.get("accountNumber"));
+        assertEquals("HDFC0005678", receiverDetails.get("ifscCode"));
+        assertEquals("HDFC Bank", receiverDetails.get("bank"));
+        assertEquals("Jane", receiverDetails.get("firstName"));
+        assertEquals("Smith", receiverDetails.get("lastName"));
+    }
+
+
+    @Test
+    void getBlockedUsers() {
+        List<BlockedUser> blockedUsers = new ArrayList<>();
+        when(blockedUserRepository.findAll(Sort.by("createdAt").descending())).thenReturn(blockedUsers);
+        ResponseEntity<List<Map<String, Object>>> response = adminService.getBlockedUsers();
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+    }
+
+    @Test
+    void deleteBlockedUser() {
+        int id = 1;
+
+        // Mock data setup
+        BlockedUser blockedUser = new BlockedUser();
+        blockedUser.setId(id);
+        blockedUser.setEmail("testuser@example.com");
+
+        // Mocking the repository and other dependencies
+        when(blockedUserRepository.existsById(id)).thenReturn(true);
+        when(blockedUserRepository.findById(id)).thenReturn(Optional.of(blockedUser));
+        doNothing().when(blockedUserRepository).deleteById(id);
+
+        String timestamp = "10:00 AM, 25 Apr 2025";
+        String messageBody = "Your account has been restored at " + timestamp;
+        when(templateProvider.buildAccountRestoredEmail(anyString())).thenReturn(messageBody);
+        doNothing().when(emailProvider).sendEmail(eq("testuser@example.com"), eq("Account Access Restored - SecurePulse"), eq(messageBody));
+
+        // Calling the method under test
+        ResponseEntity<Map<String, Object>> response = adminService.deleteBlockedUser(id);
+
+        // Assertions
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCodeValue());
+
+        Map<String, Object> result = response.getBody();
+        assertNotNull(result);
+        assertTrue((Boolean) result.get("success"));
+        assertEquals("User unblocked successfully", result.get("message"));
+
+        // Verify that deleteById and email sending methods were called
+        verify(blockedUserRepository).deleteById(id);
+        verify(emailProvider).sendEmail(eq("testuser@example.com"), eq("Account Access Restored - SecurePulse"), eq(messageBody));
+    }
+
+    @Test
+    void deleteBlockedUser_UserNotFound() {
+        int id = 1;
+
+        // Mocking repository to simulate user not found
+        when(blockedUserRepository.existsById(id)).thenReturn(false);
+
+        // Calling the method under test and expecting an exception
+        CustomException exception = assertThrows(CustomException.class, () -> {
+            adminService.deleteBlockedUser(id);
+        });
+
+        // Assert exception message
+        assertEquals("Blocked user not found", exception.getMessage());
+    }
+
+    @Test
+    void deleteBlockedUser_ErrorWhileUnblocking() {
+        int id = 1;
+
+        // Mock data setup
+        BlockedUser blockedUser = new BlockedUser();
+        blockedUser.setId(id);
+        blockedUser.setEmail("testuser@example.com");
+
+        // Mocking repository to simulate successful user fetch
+        when(blockedUserRepository.existsById(id)).thenReturn(true);
+        when(blockedUserRepository.findById(id)).thenReturn(Optional.of(blockedUser));
+
+        // Simulating an error during email sending
+        doNothing().when(blockedUserRepository).deleteById(id);
+        when(templateProvider.buildAccountRestoredEmail(anyString())).thenReturn("Message body");
+        doThrow(new RuntimeException("Email sending failed")).when(emailProvider).sendEmail(anyString(), anyString(), anyString());
+
+        // Calling the method under test and expecting an exception
+        CustomException exception = assertThrows(CustomException.class, () -> {
+            adminService.deleteBlockedUser(id);
+        });
+
+        // Assert exception message
+        assertEquals("Error while unblocking user", exception.getMessage());
+    }
+
+    @Test
+    void markTransactionAsFraud() {
+        int transactionId = 1;
+
+        // Mock data setup
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(transactionId);
+        transaction.setMarked(Transaction.TransactionMarked.SUSPICIOUS);  // Transaction is marked as SUSPICIOUS
+
+        // Mock the repository to return the transaction
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsFraud(transactionId);
+
+        // Assertions
+        assertTrue(result); // Expect the transaction to be marked as fraud
+        assertEquals(Transaction.TransactionMarked.FRAUD, transaction.getMarked()); // Verify that the status was updated to FRAUD
+
+        // Verify that the save method was called once
+        verify(transactionRepository).save(transaction);
+    }
+
+    @Test
+    void markTransactionAsFraud_TransactionNotFound() {
+        int transactionId = 1;
+
+        // Mock the repository to simulate transaction not found
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.empty());
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsFraud(transactionId);
+
+        // Assertions
+        assertFalse(result); // Expect false since the transaction was not found
+
+        // Verify that save was not called
+        verify(transactionRepository, never()).save(any(Transaction.class));
+    }
+
+    @Test
+    void markTransactionAsFraud_AlreadyMarkedFraud() {
+        int transactionId = 1;
+
+        // Mock data setup with a transaction already marked as FRAUD
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(transactionId);
+        transaction.setMarked(Transaction.TransactionMarked.FRAUD);  // Transaction is already marked as FRAUD
+
+        // Mock the repository to return the transaction
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsFraud(transactionId);
+
+        // Assertions
+        assertFalse(result); // Expect false because the transaction is already marked as FRAUD
+        assertEquals(Transaction.TransactionMarked.FRAUD, transaction.getMarked()); // Verify that the status remains FRAUD
+
+        // Verify that save was not called
+        verify(transactionRepository, never()).save(transaction);
+    }
+
+
+
+    @Test
+    void markTransactionAsNormal() {
+        // Given
+        int transactionId = 1;
+
+        // Mock transaction data
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(transactionId);
+        transaction.setSenderAccountNumber("12345");
+        transaction.setReceiverAccountNumber("67890");
+        transaction.setAmountTransferred(new BigDecimal(1000));
+        transaction.setSenderId(1);
+        transaction.setReceiverId(2);
+        transaction.setDescription("Test transaction");
+
+        // Mock sender and receiver accounts
+        Account sender = new Account();
+        sender.setAccountNumber("12345");
+        sender.setUserId(1);
+
+        Account receiver = new Account();
+        receiver.setAccountNumber("67890");
+        receiver.setUserId(2);
+
+        // Mock the repositories
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+        when(accountRepository.findByAccountNumber("12345")).thenReturn(Optional.of(sender));
+        when(accountRepository.findByAccountNumber("67890")).thenReturn(Optional.of(receiver));
+        when(transactionService.processTransaction(sender, receiver, new BigDecimal(1000), 1, 2, "Test transaction"))
+                .thenReturn(Map.of("status", true));
+
+        // Mock the deletion of the transaction
+        doNothing().when(transactionRepository).delete(transaction);
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsNormal(transactionId);
+
+        // Assertions
+        assertTrue(result); // Expect true because the transaction was marked as normal
+        verify(transactionRepository).delete(transaction); // Ensure the transaction was deleted
+    }
+
+    @Test
+    void markTransactionAsNormal_TransactionNotFound() {
+        // Given
+        int transactionId = 1;
+
+        // Mock the repository to simulate transaction not found
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.empty());
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsNormal(transactionId);
+
+        // Assertions
+        assertFalse(result); // Expect false since the transaction was not found
+        verify(transactionRepository, never()).delete(any(Transaction.class)); // Ensure deletion was not attempted
+    }
+
+    @Test
+    void markTransactionAsNormal_SenderAccountNotFound() {
+        // Given
+        int transactionId = 1;
+
+        // Mock transaction data
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(transactionId);
+        transaction.setSenderAccountNumber("12345");
+        transaction.setReceiverAccountNumber("67890");
+
+        // Mock the repositories
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+        when(accountRepository.findByAccountNumber("12345")).thenReturn(Optional.empty()); // Sender account not found
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsNormal(transactionId);
+
+        // Assertions
+        assertFalse(result); // Expect false since the sender account was not found
+        verify(transactionRepository, never()).delete(any(Transaction.class)); // Ensure deletion was not attempted
+    }
+
+    @Test
+    void markTransactionAsNormal_ReceiverAccountNotFound() {
+        // Given
+        int transactionId = 1;
+
+        // Mock transaction data
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(transactionId);
+        transaction.setSenderAccountNumber("12345");
+        transaction.setReceiverAccountNumber("67890");
+
+        // Mock the repositories
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+        when(accountRepository.findByAccountNumber("12345")).thenReturn(Optional.of(new Account())); // Sender account found
+        when(accountRepository.findByAccountNumber("67890")).thenReturn(Optional.empty()); // Receiver account not found
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsNormal(transactionId);
+
+        // Assertions
+        assertFalse(result); // Expect false since the receiver account was not found
+        verify(transactionRepository, never()).delete(any(Transaction.class)); // Ensure deletion was not attempted
+    }
+
+    @Test
+    void markTransactionAsNormal_TransactionProcessingFailed() {
+        // Given
+        int transactionId = 1;
+
+        // Mock transaction data
+        Transaction transaction = new Transaction();
+        transaction.setTransactionId(transactionId);
+        transaction.setSenderAccountNumber("12345");
+        transaction.setReceiverAccountNumber("67890");
+        transaction.setAmountTransferred(new BigDecimal(1000));
+        transaction.setSenderId(1);
+        transaction.setReceiverId(2);
+        transaction.setDescription("Test transaction");
+
+        // Mock sender and receiver accounts
+        Account sender = new Account();
+        sender.setAccountNumber("12345");
+        sender.setUserId(1);
+
+        Account receiver = new Account();
+        receiver.setAccountNumber("67890");
+        receiver.setUserId(2);
+
+        // Mock the repositories
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+        when(accountRepository.findByAccountNumber("12345")).thenReturn(Optional.of(sender));
+        when(accountRepository.findByAccountNumber("67890")).thenReturn(Optional.of(receiver));
+        when(transactionService.processTransaction(sender, receiver, new BigDecimal(1000), 1, 2, "Test transaction"))
+                .thenReturn(Map.of("status", false)); // Simulate transaction processing failure
+
+        // Call the method under test
+        boolean result = adminService.markTransactionAsNormal(transactionId);
+
+        // Assertions
+        assertFalse(result); // Expect false because the transaction was not successfully processed
+        verify(transactionRepository, never()).delete(any(Transaction.class)); // Ensure deletion was not attempted
+    }
+
+
+    @Test
+    void getAdminById_success() {
+        // Arrange
+        Admin admin = new Admin();
+        admin.setAdminId(1);
+        admin.setFirstName("John Doe");
+        when(adminRepository.findById(1)).thenReturn(Optional.of(admin));
+
+        // Act
+        ResponseEntity<Map<String, Object>> response = adminService.getAdminById(1);
+
+        // Assert
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(true, response.getBody().get("success"));
+        assertEquals(admin, response.getBody().get("admin"));
+    }
+
+    @Test
+    void getAdminById_notFound() {
+        // Arrange
+        when(adminRepository.findById(2)).thenReturn(Optional.empty());
+
+        // Act
+        ResponseEntity<Map<String, Object>> response = adminService.getAdminById(2);
+
+        // Assert
+        assertEquals(404, response.getStatusCodeValue());
+        assertEquals(false, response.getBody().get("success"));
+        assertEquals("Admin not found", response.getBody().get("message"));
+    }
+
+
+}

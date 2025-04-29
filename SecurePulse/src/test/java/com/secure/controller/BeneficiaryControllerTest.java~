@@ -1,0 +1,198 @@
+package com.secure.controller;
+
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.secure.model.Beneficiary;
+import com.secure.repository.AccountRepository;
+import com.secure.repository.BeneficiaryRepository;
+import com.secure.repository.UserRepository;
+import com.secure.services.BeneficiaryService;
+import com.secure.utils.EmailProvider;
+import com.secure.utils.JwtProvider;
+import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class BeneficiaryControllerTest {
+
+    @Mock
+    private JwtProvider jwtProvider;
+
+    @Mock
+    private BeneficiaryService beneficiaryService;
+
+    @Mock
+    private EmailProvider emailProvider;
+
+    @Mock
+    private  AccountRepository accountRepository;
+
+    @Mock
+    private  BeneficiaryRepository beneficiaryRepository;
+
+    @Mock
+    private  UserRepository userRepository;
+
+    @InjectMocks
+    private BeneficiaryController beneficiaryController;
+
+
+
+
+    @Test
+    void addBeneficiary() {
+        // Arrange
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        String mockToken = "mock.jwt.token";
+
+        // Mock jwtProvider.extractAuthToken
+        when(jwtProvider.extractAuthToken(mockRequest)).thenReturn(mockToken);
+
+        // Mock DecodedJWT and Claims
+        DecodedJWT mockJwt = mock(DecodedJWT.class);
+        Claim userIdClaim = mock(Claim.class);
+        Claim userBankClaim = mock(Claim.class);
+
+        when(userIdClaim.asInt()).thenReturn(123);
+        when(userBankClaim.asString()).thenReturn("HDFC");
+
+        when(mockJwt.getClaim("userId")).thenReturn(userIdClaim);
+        when(mockJwt.getClaim("userBank")).thenReturn(userBankClaim);
+        when(jwtProvider.extractClaims(mockToken)).thenReturn(mockJwt);
+
+        // Request body
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("accountNumber", "1234567890");
+        requestBody.put("ifscCode", "HDFC0001234");
+        requestBody.put("amount", new BigDecimal("1000"));
+        requestBody.put("name", "John Doe");
+
+        // Mock service response
+        Map<String, Object> serviceResponse = new HashMap<>();
+        serviceResponse.put("success", true);
+        serviceResponse.put("data", new Object()); // or a mock Beneficiary object
+        serviceResponse.put("message", "Successfully added beneficiary");
+
+        when(beneficiaryService.addBeneficiary(
+                123,
+                "HDFC",
+                "1234567890",
+                "HDFC0001234",
+                new BigDecimal("1000"),
+                "John Doe"
+        )).thenReturn(serviceResponse);
+
+        // Act
+        ResponseEntity<Map<String, Object>> response = beneficiaryController.addBeneficiary(requestBody, mockRequest);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue((Boolean) response.getBody().get("success"));
+        assertNotNull(response.getBody().get("data"));
+        assertEquals("Successfully added beneficiary", response.getBody().get("message"));
+    }
+
+    private DecodedJWT mockJwt(int userId, String userBank) {
+        DecodedJWT jwt = mock(DecodedJWT.class);
+        Claim userIdClaim = mock(Claim.class);
+        Claim userBankClaim = mock(Claim.class);
+        when(userIdClaim.asInt()).thenReturn(userId);
+        when(userBankClaim.asString()).thenReturn(userBank);
+        when(jwt.getClaim("userId")).thenReturn(userIdClaim);
+        when(jwt.getClaim("userBank")).thenReturn(userBankClaim);
+        return jwt;
+    }
+
+    @Test
+    void getBeneficiaries() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(jwtProvider.extractAuthToken(request)).thenReturn("token");
+        when(jwtProvider.extractClaims("token")).thenReturn(mockJwt(1, "HDFC"));
+
+        List<Beneficiary> mockList = List.of(new Beneficiary());
+        when(beneficiaryService.getBeneficiaries(1, "HDFC", true)).thenReturn(mockList);
+
+        ResponseEntity<List<Beneficiary>> response = beneficiaryController.getBeneficiaries(request, 1, true);
+        assertEquals(1, response.getBody().size());
+    }
+
+    @Test
+    void deleteBeneficiary() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(jwtProvider.extractAuthToken(request)).thenReturn("token");
+        when(jwtProvider.extractClaims("token")).thenReturn(mockJwt(10, "HDFC"));
+
+        ResponseEntity<Map<String, Object>> response = beneficiaryController.deleteBeneficiary(5, request);
+        assertEquals(true, response.getBody().get("success"));
+    }
+
+    @Test
+    void updateBeneficiaryAmount() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(jwtProvider.extractAuthToken(request)).thenReturn("token");
+        when(jwtProvider.extractClaims("token")).thenReturn(mockJwt(1, "HDFC"));
+
+        Beneficiary updated = new Beneficiary();
+        updated.setAmount(new BigDecimal("2000"));
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("beneficiaryId", 99);
+        requestBody.put("amount", new BigDecimal("2000"));
+
+        when(beneficiaryService.updateBeneficiaryAmount(1, 99, new BigDecimal("2000"))).thenReturn(updated);
+
+        ResponseEntity<Map<String, Object>> response = beneficiaryController.updateBeneficiaryAmount(requestBody, request);
+        assertTrue((Boolean) response.getBody().get("success"));
+        assertEquals(updated, response.getBody().get("data"));
+    }
+
+    @Test
+    void getBeneficiariesTransaction() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(jwtProvider.extractAuthToken(request)).thenReturn("token");
+        when(jwtProvider.extractClaims("token")).thenReturn(mockJwt(1, "HDFC"));
+
+        List<Beneficiary> mockList = List.of(new Beneficiary());
+        when(beneficiaryService.getBeneficiariesForTransaction(1, "HDFC", false)).thenReturn(mockList);
+
+        ResponseEntity<List<Beneficiary>> response = beneficiaryController.getBeneficiariesTransaction(request, 1, false);
+        assertEquals(1, response.getBody().size());
+    }
+
+    @Test
+    void compareBeneficiary() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(jwtProvider.extractAuthToken(request)).thenReturn("token");
+        when(jwtProvider.extractClaims("token")).thenReturn(mockJwt(42, "HDFC"));
+
+        Map<String, Object> mockResponse = Map.of(
+                "success", true,
+                "data", new Object()
+        );
+
+        when(beneficiaryService.compareBeneficiary(42, 100, "HDFC")).thenReturn(mockResponse);
+
+        ResponseEntity<Map<String, Object>> response = beneficiaryController.compareBeneficiary(request, 100);
+        assertTrue((Boolean) response.getBody().get("success"));
+        assertNotNull(response.getBody().get("data"));
+    }
+
+
+
+}

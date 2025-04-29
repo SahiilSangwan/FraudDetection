@@ -266,7 +266,7 @@ const UserContextProvider = (props) => {
 
     const getBankTheme = (bank) => {
         const themes = {
-          sbi: {
+          wissen: {
             background: "bg-blue-50",
             header: "bg-gradient-to-r from-blue-600 to-blue-800",
             button: "bg-gradient-to-r from-blue-600 to-blue-700",
@@ -275,7 +275,7 @@ const UserContextProvider = (props) => {
             link: "text-blue-600 hover:text-blue-800",
             border: "border-t-4 border-blue-600"
           },
-          hdfc: {
+          finova: {
             background: "bg-red-50",
             header: "bg-gradient-to-r from-red-500 to-red-700",
             button: "bg-gradient-to-r from-red-500 to-red-700",
@@ -284,17 +284,17 @@ const UserContextProvider = (props) => {
             link: "text-red-600 hover:text-red-800",
             border: "border-t-4 border-red-600"
           },
-          icici: {
-            background: "bg-orange-50",
-            header: "bg-gradient-to-r from-orange-500 to-orange-700",
-            button: "bg-gradient-to-r from-orange-400 to-orange-600",
-            buttonSecondary: "bg-orange-100 text-orange-600 hover:bg-orange-200",
-            focus: "focus:ring-orange-500 focus:border-orange-500",
-            link: "text-orange-600 hover:text-orange-800",
-            border: "border-t-4 border-orange-600"
+          heritage: {
+            background: "bg-emerald-50",
+            header: "bg-gradient-to-r from-emerald-500 to-emerald-700",
+            button: "bg-gradient-to-r from-emerald-400 to-emerald-600",
+            buttonSecondary: "bg-emerald-100 text-emerald-600 hover:bg-emerald-200",
+            focus: "focus:ring-emerald-500 focus:border-emerald-500",
+            link: "text-emerald-600 hover:text-emerald-800",
+            border: "border-t-4 border-emerald-600"
           }
         };
-        return themes[bank] || themes.sbi; 
+        return themes[bank] || themes.wissen; 
       };
 
       const sendWarning = async (purpose) => {

@@ -1,0 +1,450 @@
+//package com.secure.services;
+//
+//import com.secure.exception.CustomException;
+//import com.secure.model.*;
+//import com.secure.repository.AccountRepository;
+//import com.secure.repository.BeneficiaryRepository;
+//import com.secure.repository.TransactionRepository;
+//import com.secure.repository.UserRepository;
+//import com.secure.utils.EmailProvider;
+//import com.secure.utils.TemplateProvider;
+//import org.junit.jupiter.api.BeforeEach;
+//import org.junit.jupiter.api.Test;
+//import org.mockito.*;
+//import java.math.BigDecimal;
+//import java.time.LocalDateTime;
+//import java.util.*;
+//
+//import static org.junit.jupiter.api.Assertions.*;
+//import static org.mockito.Mockito.*;
+//
+//class TransactionServiceTest {
+//
+//    @InjectMocks
+//    private TransactionService transactionService;
+//
+//    @Mock
+//    private AccountRepository accountRepository;
+//
+//    @Mock
+//    private BeneficiaryRepository beneficiaryRepository;
+//
+//    @Mock
+//    private TransactionRepository transactionRepository;
+//
+//    @Mock
+//    private UserRepository userRepository;
+//
+//    @Mock
+//    private EmailProvider emailProvider;
+//
+//    @Mock
+//    private TemplateProvider templateProvider;
+//
+//    @BeforeEach
+//    void setUp() {
+//        MockitoAnnotations.openMocks(this);
+//    }
+//
+//    @Test
+//    void addTransaction_shouldReturnSuccess_whenAllValidAndOtpUnderLimit() {
+//        Integer senderId = 1, beneficiaryId = 2, otpAttempt = 1;
+//        String receiverAcc = "123456", ifsc = "IFSC001", userBank = "BankA", description = "Test transfer";
+//        BigDecimal amount = new BigDecimal("500");
+//
+//        Beneficiary beneficiary = new Beneficiary();
+//        beneficiary.setBeneficiaryUserId(3);
+//        beneficiary.setAmount(new BigDecimal("1000"));
+//
+//        Account sender = new Account();
+//        sender.setAccountNumber("SENDER123");
+//        sender.setUserId(senderId);
+//        sender.setBalance(new BigDecimal("1000"));
+//
+//        Account receiver = new Account();
+//        receiver.setAccountNumber(receiverAcc);
+//        receiver.setUserId(3);
+//        receiver.setBalance(new BigDecimal("200"));
+//
+//        Transaction mockTransaction = new Transaction();
+//        mockTransaction.setTransactionId(1);
+//        mockTransaction.setSenderId(senderId);
+//        mockTransaction.setReceiverId(3);
+//        mockTransaction.setAmountTransferred(amount);
+//        mockTransaction.setTimestamp(LocalDateTime.now());
+//        mockTransaction.setDescription(description);
+//
+//        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+//        when(accountRepository.findByUserIdAndBank(senderId, userBank)).thenReturn(List.of(sender));
+//        when(accountRepository.findByAccountNumberAndIfscCode(receiverAcc, ifsc)).thenReturn(receiver);
+//        when(userRepository.findById(senderId)).thenReturn(Optional.of(new User()));
+//        when(userRepository.findById(3)).thenReturn(Optional.of(new User()));
+//        when(templateProvider.buildDebitNotificationEmail(any(), any(), any(), anyString())).thenReturn("debit email");
+//        when(templateProvider.buildCreditNotificationEmail(any(), any(), any(), anyString(), anyString())).thenReturn("credit email");
+//
+//        // Ensure that save returns a non-null transaction
+//        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+//            Transaction t = invocation.getArgument(0);
+//            t.setTransactionId(1); // Simulate DB-generated ID
+//            return t;
+//        });
+//
+//        // Act
+//        Map<String, Object> result = transactionService.addTransaction(senderId, beneficiaryId, receiverAcc, amount, ifsc, userBank, description, otpAttempt);
+//
+//        // Debugging: Log the result map
+//        System.out.println("Result map: " + result);
+//
+//        // Assert
+//        assertNotNull(result, "Result map should not be null");
+//        assertTrue((Boolean) result.get("status"), "Status should be true");
+//        assertEquals("Transaction successful", result.get("message"), "Message should match");
+//        assertEquals(1,  result.get("transactionId"), "Transaction ID should match");
+//
+//        // Verify save was called
+//        verify(transactionRepository, times(1)).save(any(Transaction.class));
+//    }
+//    @Test
+//    void addTransaction_shouldReturnSuspicious_whenOtpAttemptExceeded() {
+//        Integer senderId = 1, beneficiaryId = 2, otpAttempt = 3;
+//        String receiverAcc = "123456", ifsc = "IFSC001", userBank = "BankA", description = "Test transfer";
+//        BigDecimal amount = new BigDecimal("500");
+//
+//        Beneficiary beneficiary = new Beneficiary();
+//        beneficiary.setBeneficiaryUserId(3);
+//        beneficiary.setAmount(new BigDecimal("1000"));
+//
+//        Account sender = new Account();
+//        sender.setAccountNumber("SENDER123");
+//        sender.setUserId(senderId);
+//        sender.setBalance(new BigDecimal("1000"));
+//
+//        Account receiver = new Account();
+//        receiver.setAccountNumber(receiverAcc);
+//        receiver.setUserId(3);
+//        receiver.setBalance(new BigDecimal("200"));
+//
+//        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+//        when(accountRepository.findByUserIdAndBank(senderId, userBank)).thenReturn(List.of(sender));
+//        when(accountRepository.findByAccountNumberAndIfscCode(receiverAcc, ifsc)).thenReturn(receiver);
+//
+//        Map<String, Object> result = transactionService.addTransaction(senderId, beneficiaryId, receiverAcc, amount, ifsc, userBank, description, otpAttempt);
+//        assertTrue((Boolean) result.get("status"));
+//        assertEquals("Transaction suspicious: Multiple incorrect OTP attempts", result.get("message"));
+//    }
+//
+//    @Test
+//    void processTransaction_shouldReturnError_whenInsufficientBalance() {
+//        Account sender = new Account();
+//        sender.setAccountNumber("SENDER");
+//        sender.setBalance(new BigDecimal("100"));
+//
+//        Account receiver = new Account();
+//        receiver.setAccountNumber("RECEIVER");
+//        receiver.setBalance(new BigDecimal("1000"));
+//
+//        Map<String, Object> result = transactionService.processTransaction(sender, receiver, new BigDecimal("500"), 1, 2, "test");
+//        assertFalse((Boolean) result.get("status"));
+//        assertEquals("Insufficient balance after locking", result.get("message"));
+//    }
+//
+//    @Test
+//    void getTransactionsByUserId_shouldReturnTransactions() {
+//        Integer userId = 1;
+//
+//        Transaction txn1 = new Transaction();
+//        txn1.setTransactionId(101);
+//        txn1.setDescription("Sent");
+//        txn1.setTimestamp(LocalDateTime.now());
+//        txn1.setAmountTransferred(new BigDecimal("200"));
+//        txn1.setCurrentBalanceSender(new BigDecimal("800"));
+//        txn1.setFlag(Transaction.TransactionFlag.COMPLETED);
+//
+//        Transaction txn2 = new Transaction();
+//        txn2.setTransactionId(102);
+//        txn2.setDescription("Received");
+//        txn2.setTimestamp(LocalDateTime.now());
+//        txn2.setAmountTransferred(new BigDecimal("300"));
+//        txn2.setCurrentBalanceReceiver(new BigDecimal("1200"));
+//        txn2.setFlag(Transaction.TransactionFlag.COMPLETED);
+//
+//        when(transactionRepository.findBySenderIdAndFlag(userId, Transaction.TransactionFlag.COMPLETED))
+//                .thenReturn(List.of(txn1));
+//        when(transactionRepository.findByReceiverIdAndFlag(userId, Transaction.TransactionFlag.COMPLETED))
+//                .thenReturn(List.of(txn2));
+//
+//        Map<String, Object> result = transactionService.getTransactionsByUserId(userId);
+//        assertTrue((Boolean) result.get("status"));
+//        List<?> transactions = (List<?>) result.get("transactions");
+//        assertEquals(2, transactions.size());
+//    }
+//}
+
+
+package com.secure.services;
+
+import com.secure.exception.CustomException;
+import com.secure.model.*;
+import com.secure.repository.*;
+import com.secure.utils.EmailProvider;
+import com.secure.utils.TemplateProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class TransactionServiceTest {
+
+    @InjectMocks
+    private TransactionService transactionService;
+
+    @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
+    private BeneficiaryRepository beneficiaryRepository;
+
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private EmailProvider emailProvider;
+
+    @Mock
+    private TemplateProvider templateProvider;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void addTransaction_shouldReturnInvalidBeneficiary_whenBeneficiaryNotFound() {
+        when(beneficiaryRepository.findById(anyInt())).thenReturn(Optional.empty());
+
+        Map<String, Object> result = transactionService.addTransaction(1, 2, "123", BigDecimal.TEN, "IFSC001", "BankA", "desc", 0);
+        assertFalse((Boolean) result.get("status"));
+        assertEquals("Invalid beneficiary or limit exceeded", result.get("message"));
+    }
+
+    @Test
+    void addTransaction_shouldReturnInvalidSenderAccount_whenSenderAccountNotFound() {
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setBeneficiaryUserId(2);
+        beneficiary.setAmount(BigDecimal.TEN);
+
+        when(beneficiaryRepository.findById(anyInt())).thenReturn(Optional.of(beneficiary));
+        when(accountRepository.findByUserIdAndBank(anyInt(), anyString())).thenReturn(Collections.emptyList());
+
+        Map<String, Object> result = transactionService.addTransaction(1, 2, "123", BigDecimal.ONE, "IFSC001", "BankA", "desc", 0);
+        assertFalse((Boolean) result.get("status"));
+        assertEquals("Sender account not found", result.get("message"));
+    }
+
+    @Test
+    void addTransaction_shouldReturnInsufficientBalance_whenBalanceLow() {
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setBeneficiaryUserId(2);
+        beneficiary.setAmount(new BigDecimal("1000"));
+
+        Account sender = new Account();
+        sender.setAccountNumber("SENDER123");
+        sender.setUserId(1);
+        sender.setBalance(new BigDecimal("5"));
+
+        when(beneficiaryRepository.findById(anyInt())).thenReturn(Optional.of(beneficiary));
+        when(accountRepository.findByUserIdAndBank(anyInt(), anyString())).thenReturn(List.of(sender));
+
+        Map<String, Object> result = transactionService.addTransaction(1, 2, "123", BigDecimal.TEN, "IFSC001", "BankA", "desc", 0);
+        assertFalse((Boolean) result.get("status"));
+        assertEquals("Insufficient balance", result.get("message"));
+    }
+
+    @Test
+    void addTransaction_shouldReturnReceiverNotFound_whenReceiverAccountNotFound() {
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setBeneficiaryUserId(2);
+        beneficiary.setAmount(new BigDecimal("1000"));
+
+        Account sender = new Account();
+        sender.setAccountNumber("SENDER123");
+        sender.setUserId(1);
+        sender.setBalance(new BigDecimal("1000"));
+
+        when(beneficiaryRepository.findById(anyInt())).thenReturn(Optional.of(beneficiary));
+        when(accountRepository.findByUserIdAndBank(anyInt(), anyString())).thenReturn(List.of(sender));
+        when(accountRepository.findByAccountNumberAndIfscCode(anyString(), anyString())).thenReturn(null);
+
+        Map<String, Object> result = transactionService.addTransaction(1, 2, "123", BigDecimal.TEN, "IFSC001", "BankA", "desc", 0);
+        assertFalse((Boolean) result.get("status"));
+        assertEquals("Receiver account not found", result.get("message"));
+    }
+
+    @Test
+    void addTransaction_shouldHandleExceptionGracefully() {
+        when(beneficiaryRepository.findById(anyInt())).thenThrow(new RuntimeException("DB Down"));
+
+        Map<String, Object> result = transactionService.addTransaction(1, 2, "123", BigDecimal.ONE, "IFSC001", "BankA", "desc", 0);
+        assertFalse((Boolean) result.get("status"));
+        assertTrue(((String) result.get("message")).startsWith("Transaction failed:"));
+    }
+
+    @Test
+    void addTransaction_shouldReturnSuspicious_whenOtpAttemptExceeded() {
+        Integer senderId = 1, beneficiaryId = 2, otpAttempt = 3;
+        String receiverAcc = "123456", ifsc = "IFSC001", userBank = "BankA", description = "Test transfer";
+        BigDecimal amount = new BigDecimal("500");
+
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setBeneficiaryUserId(3);
+        beneficiary.setAmount(new BigDecimal("1000"));
+
+        Account sender = new Account();
+        sender.setAccountNumber("SENDER123");
+        sender.setUserId(senderId);
+        sender.setBalance(new BigDecimal("1000"));
+
+        Account receiver = new Account();
+        receiver.setAccountNumber(receiverAcc);
+        receiver.setUserId(3);
+        receiver.setBalance(new BigDecimal("200"));
+
+        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+        when(accountRepository.findByUserIdAndBank(senderId, userBank)).thenReturn(List.of(sender));
+        when(accountRepository.findByAccountNumberAndIfscCode(receiverAcc, ifsc)).thenReturn(receiver);
+
+        when(transactionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Map<String, Object> result = transactionService.addTransaction(senderId, beneficiaryId, receiverAcc, amount, ifsc, userBank, description, otpAttempt);
+        assertTrue((Boolean) result.get("status"));
+        assertEquals("Transaction suspicious: Multiple incorrect OTP attempts", result.get("message"));
+
+        verify(transactionRepository, times(1)).save(any());
+    }
+
+    @Test
+    void addTransaction_shouldReturnSuccess_whenAllValidAndOtpUnderLimit() {
+        Integer senderId = 1, beneficiaryId = 2, otpAttempt = 1;
+        String receiverAcc = "123456", ifsc = "IFSC001", userBank = "BankA", description = "Test transfer";
+        BigDecimal amount = new BigDecimal("500");
+
+        Beneficiary beneficiary = new Beneficiary();
+        beneficiary.setBeneficiaryUserId(3);
+        beneficiary.setAmount(new BigDecimal("1000"));
+
+        Account sender = new Account();
+        sender.setAccountNumber("SENDER123");
+        sender.setUserId(senderId);
+        sender.setBalance(new BigDecimal("1000"));
+
+        Account receiver = new Account();
+        receiver.setAccountNumber(receiverAcc);
+        receiver.setUserId(3);
+        receiver.setBalance(new BigDecimal("200"));
+
+        User senderUser = new User();
+        senderUser.setEmail("sender@example.com");
+
+        User receiverUser = new User();
+        receiverUser.setEmail("receiver@example.com");
+
+        when(beneficiaryRepository.findById(beneficiaryId)).thenReturn(Optional.of(beneficiary));
+        when(accountRepository.findByUserIdAndBank(senderId, userBank)).thenReturn(List.of(sender));
+        when(accountRepository.findByAccountNumberAndIfscCode(receiverAcc, ifsc)).thenReturn(receiver);
+        when(userRepository.findById(senderId)).thenReturn(Optional.of(senderUser));
+        when(userRepository.findById(3)).thenReturn(Optional.of(receiverUser));
+        when(templateProvider.buildDebitNotificationEmail(any(), any(), any(), anyString())).thenReturn("debit email");
+        when(templateProvider.buildCreditNotificationEmail(any(), any(), any(), anyString(), anyString())).thenReturn("credit email");
+
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
+            Transaction t = invocation.getArgument(0);
+            t.setTransactionId(1);
+            return t;
+        });
+
+        Map<String, Object> result = transactionService.addTransaction(senderId, beneficiaryId, receiverAcc, amount, ifsc, userBank, description, otpAttempt);
+
+        assertTrue((Boolean) result.get("status"));
+        assertEquals("Transaction successful", result.get("message"));
+        assertEquals(1, result.get("transactionId"));
+
+        verify(emailProvider, times(2)).sendEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void processTransaction_shouldReturnError_whenInsufficientBalance() {
+        Account sender = new Account();
+        sender.setAccountNumber("SENDER");
+        sender.setBalance(new BigDecimal("100"));
+
+        Account receiver = new Account();
+        receiver.setAccountNumber("RECEIVER");
+        receiver.setBalance(new BigDecimal("1000"));
+
+        Map<String, Object> result = transactionService.processTransaction(sender, receiver, new BigDecimal("500"), 1, 2, "test");
+        assertFalse((Boolean) result.get("status"));
+        assertEquals("Insufficient balance after locking", result.get("message"));
+    }
+
+    @Test
+    void processTransaction_shouldThrowCustomException_whenAccountRepositoryFails() {
+        Account sender = new Account();
+        sender.setAccountNumber("SENDER1");
+        sender.setBalance(new BigDecimal("1000"));
+
+        Account receiver = new Account();
+        receiver.setAccountNumber("RECEIVER1");
+        receiver.setBalance(new BigDecimal("500"));
+
+        doThrow(new RuntimeException("Database error")).when(accountRepository).save(any(Account.class));
+
+        assertThrows(CustomException.class, () ->
+                transactionService.processTransaction(sender, receiver, new BigDecimal("200"), 1, 2, "test"));
+    }
+
+    @Test
+    void getTransactionsByUserId_shouldReturnTransactions() {
+        Integer userId = 1;
+
+        Transaction txn1 = new Transaction();
+        txn1.setTransactionId(101);
+        txn1.setDescription("Sent");
+        txn1.setTimestamp(LocalDateTime.now());
+        txn1.setAmountTransferred(new BigDecimal("200"));
+        txn1.setCurrentBalanceSender(new BigDecimal("800"));
+        txn1.setFlag(Transaction.TransactionFlag.COMPLETED);
+
+        Transaction txn2 = new Transaction();
+        txn2.setTransactionId(102);
+        txn2.setDescription("Received");
+        txn2.setTimestamp(LocalDateTime.now());
+        txn2.setAmountTransferred(new BigDecimal("300"));
+        txn2.setCurrentBalanceReceiver(new BigDecimal("1200"));
+        txn2.setFlag(Transaction.TransactionFlag.COMPLETED);
+
+        when(transactionRepository.findBySenderIdAndFlag(userId, Transaction.TransactionFlag.COMPLETED)).thenReturn(List.of(txn1));
+        when(transactionRepository.findByReceiverIdAndFlag(userId, Transaction.TransactionFlag.COMPLETED)).thenReturn(List.of(txn2));
+
+        Map<String, Object> result = transactionService.getTransactionsByUserId(userId);
+
+        assertTrue((Boolean) result.get("status"));
+        List<?> transactions = (List<?>) result.get("transactions");
+        assertEquals(2, transactions.size());
+    }
+
+    @Test
+    void getTransactionsByUserId_shouldThrowCustomException_onFailure() {
+        when(transactionRepository.findBySenderIdAndFlag(anyInt(), any())).thenThrow(new RuntimeException("Database failure"));
+
+        assertThrows(CustomException.class, () -> transactionService.getTransactionsByUserId(1));
+    }
+}
+

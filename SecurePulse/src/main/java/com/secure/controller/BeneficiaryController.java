@@ -26,6 +26,10 @@ public class BeneficiaryController {
         this.beneficiaryService = beneficiaryService;
     }
 
+    /**
+     * Retrieves a list of beneficiaries for the specified user,
+     * optionally filtered by whether the bank is the same.
+     */
     @GetMapping("/{userId}")
     public ResponseEntity<List<Beneficiary>> getBeneficiaries(HttpServletRequest request,
                                                               @PathVariable Integer userId,
@@ -37,14 +41,7 @@ public class BeneficiaryController {
             }
 
             DecodedJWT jwt = jwtProvider.extractClaims(token);
-            if (jwt == null) {
-                throw new CustomException("Invalid JWT token.");
-            }
-
             String userBank = jwt.getClaim("userBank").asString();
-            if (userBank == null || userBank.isEmpty()) {
-                throw new CustomException("userBank not found in JWT.");
-            }
 
             List<Beneficiary> beneficiaries = beneficiaryService.getBeneficiaries(userId, userBank, sameBank);
             return ResponseEntity.ok(beneficiaries);
@@ -55,6 +52,9 @@ public class BeneficiaryController {
         }
     }
 
+    /**
+     * Adds a new beneficiary for the authenticated user.
+     */
     @PostMapping("/add")
     public ResponseEntity<Map<String, Object>> addBeneficiary(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
         try {
@@ -81,6 +81,9 @@ public class BeneficiaryController {
         }
     }
 
+    /**
+     * Deletes a beneficiary based on the provided beneficiary ID.
+     */
     @DeleteMapping("/delete/{beneficiaryId}")
     public ResponseEntity<Map<String, Object>> deleteBeneficiary(@PathVariable Integer beneficiaryId, HttpServletRequest request) {
         try {
@@ -103,6 +106,9 @@ public class BeneficiaryController {
         }
     }
 
+    /**
+     * Updates the transfer limit (amount) for a specific beneficiary.
+     */
     @PutMapping("/update")
     public ResponseEntity<Map<String, Object>> updateBeneficiaryAmount(@RequestBody Map<String, Object> requestBody, HttpServletRequest request) {
         try {
@@ -130,6 +136,9 @@ public class BeneficiaryController {
         }
     }
 
+    /**
+     * Retrieves beneficiaries eligible for transaction by bank type (same/different).
+     */
     @GetMapping("transaction/{userId}")
     public ResponseEntity<List<Beneficiary>> getBeneficiariesTransaction(HttpServletRequest request,
                                                                          @PathVariable Integer userId,
@@ -141,14 +150,7 @@ public class BeneficiaryController {
             }
 
             DecodedJWT jwt = jwtProvider.extractClaims(token);
-            if (jwt == null) {
-                throw new CustomException("Invalid JWT token.");
-            }
-
             String userBank = jwt.getClaim("userBank").asString();
-            if (userBank == null || userBank.isEmpty()) {
-                throw new CustomException("userBank not found in JWT.");
-            }
 
             List<Beneficiary> beneficiaries = beneficiaryService.getBeneficiariesForTransaction(userId, userBank, sameBank);
             return ResponseEntity.ok(beneficiaries);
@@ -159,6 +161,9 @@ public class BeneficiaryController {
         }
     }
 
+    /**
+     * Compares beneficiary account details with existing records for validation.
+     */
     @GetMapping("/compare/{beneficiaryId}")
     public ResponseEntity<Map<String, Object>> compareBeneficiary(HttpServletRequest request, @PathVariable Integer beneficiaryId) {
         try {
