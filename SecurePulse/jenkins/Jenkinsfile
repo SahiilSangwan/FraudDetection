@@ -15,6 +15,18 @@ pipeline {
             }
         }
 
+        stage('Build Java Project') {
+            steps {
+                dir('SecurePulse') {
+                    // Remove target folder manually and rebuild the project
+                    bat """
+                    rmdir /s /q target
+                    mvn package -DskipTests
+                    """
+                }
+            }
+        }
+
         stage('Remove Old Container and Image') {
             steps {
                 bat """
@@ -48,7 +60,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ SecurePulse backend deployed on port 8090!'
+            echo '✅ SecurePulse backend deployed successfully on port 8090!'
         }
         failure {
             echo '❌ Deployment failed.'
