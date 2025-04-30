@@ -8,14 +8,15 @@ import com.secure.model.Admin;
 import com.secure.model.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
 @Service
 public class JwtProvider {
-
-    private static final String SECRET_KEY = "07nk94rplj";
+    @Value("${jwt.secret.key}")
+    private  String SECRET_KEY ;
     private static final String AUTH_COOKIE_NAME = "auth_token";
     private static final String OTP_COOKIE_NAME = "otp_token";
 

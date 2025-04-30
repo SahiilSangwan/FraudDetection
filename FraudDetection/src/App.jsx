@@ -19,27 +19,27 @@ const App = () => {
   const{uToken} = useContext(UserContext);
   const{vToken} = useContext(UserContext);
 
-  // const BlockRightClick = () => {
-  //   useEffect(() => {
-  //     const handleRightClick = (e) => {
-  //       e.preventDefault();
-  //       alert("Functionality disabled!");
-  //     };
+  const BlockRightClick = () => {
+    useEffect(() => {
+      const handleRightClick = (e) => {
+        e.preventDefault();
+        alert("Functionality disabled!");
+      };
 
-  //     document.addEventListener("contextmenu", handleRightClick);
-  //     return () => {
-  //       document.removeEventListener("contextmenu", handleRightClick);
-  //     };
-  //   }
-  //   , []);
-  //   return null;
-  // };
+      document.addEventListener("contextmenu", handleRightClick);
+      return () => {
+        document.removeEventListener("contextmenu", handleRightClick);
+      };
+    }
+    , []);
+    return null;
+  };
 
-  // AntiInspect();
+  AntiInspect();
 
   return uToken && vToken ? (
     <>
-      {/* <BlockRightClick /> */}
+      <BlockRightClick />
       <ToastContainer />
       <Routes>
         <Route path="/" element={<UserDashboard />} />
@@ -53,7 +53,7 @@ const App = () => {
     </>
   ) : uToken ? (
     <>
-      {/* <BlockRightClick /> */}
+      <BlockRightClick />
       <ToastContainer />
       <Routes>
         <Route path="/verification" element={<Verification />} />
@@ -61,7 +61,7 @@ const App = () => {
     </>
   ) : (
     <>
-      {/* <BlockRightClick /> */}
+      <BlockRightClick />
       <ToastContainer />
       <Routes>
         <Route path="/" element={<Home />} />
